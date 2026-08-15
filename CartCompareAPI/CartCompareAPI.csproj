@@ -16,10 +16,4 @@
     <PackageReference Include="Scalar.AspNetCore" Version="2.16.20" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Infrastructure\" />
-    <Folder Include="Infrastructure\Data\" />
-    <Folder Include="Infrastructure\Seed\" />
-  </ItemGroup>
-
 </Project>
