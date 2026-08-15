@@ -1,3 +1,4 @@
+using CartCompareApi.Features.Products.GetProducts;
 using CartCompareApi.Infrastructure.Data.Seed;
 using CartCompareAPI.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -15,12 +16,16 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(connectionString));
 
+builder.Services.AddScoped<GetProductsHandler>();
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
     app.MapScalarApiReference();
 }
+
+app.MapGetProducts();
 
 
 using (var scope = app.Services.CreateScope())
