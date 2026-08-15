@@ -9,6 +9,17 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddProductFeatures();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("LocalDevelopment", policy =>
+    {
+        policy
+            .SetIsOriginAllowed(origin =>
+                Uri.TryCreate(origin, UriKind.Absolute, out var uri) && uri.IsLoopback)
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
 
 var app = builder.Build();
 
@@ -18,13 +29,18 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference();
 }
 
-app.MapProductEndpoints();
 await app.InitialiseDatabaseAsync();
 
 app.UseHttpsRedirection();
 
+if (app.Environment.IsDevelopment())
+{
+    app.UseCors("LocalDevelopment");
+}
+
 app.UseAuthorization();
 
+app.MapProductEndpoints();
 app.MapControllers();
 
 app.Run(); 
