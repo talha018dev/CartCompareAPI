@@ -1,9 +1,7 @@
-using CartCompareApi.Infrastructure.Data;
-using CartCompareAPI.Features.Products.GetProducts;
 using CartCompareAPI.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
-namespace CartCompareApi.Features.Products.GetProducts;
+namespace CartCompareAPI.Features.Products.GetProducts;
 
 public class GetProductsHandler(AppDbContext _db)
 {

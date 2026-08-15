@@ -1,4 +1,4 @@
-namespace CartCompareApi.Features.Products.GetProducts;
+namespace CartCompareAPI.Features.Products.GetProducts;
 
 public class GetProductsResponse
 {
