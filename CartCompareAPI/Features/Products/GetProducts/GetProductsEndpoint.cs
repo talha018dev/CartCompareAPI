@@ -13,6 +13,6 @@ public static class GetProductsEndpoint
             {
                 var result = await handler.Handle(request);
                 return Results.Ok(result);
-            });
+            }).WithName("GetProducts").WithTags("Products");
     }
 }
