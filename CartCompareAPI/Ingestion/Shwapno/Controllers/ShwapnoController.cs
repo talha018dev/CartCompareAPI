@@ -13,10 +13,10 @@ public class ShwapnoController : ControllerBase
         _browser = browser;
     }
 
-    [HttpGet("test-browser")]
-    public async Task<IActionResult> TestBrowser()
+    [HttpGet("dairy")]
+    public async Task<IActionResult> IngestShwapnoProducts()
     {
-        await _browser.TestAsync();
+        await _browser.GetProductsFromShwapno();
 
         return Ok("Playwright worked");
     }

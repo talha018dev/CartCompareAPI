@@ -4,9 +4,9 @@ using Microsoft.Playwright;
 
 namespace CartCompareApi.Ingestion.Shwapno.Browser;
 
-public class ShwapnoBrowserClient
+public class ShwapnoBrowserClient(IWebHostEnvironment _environment)
 {
-    public async Task TestAsync()
+    public async Task GetProductsFromShwapno()
     {
         using var playwright = await Playwright.CreateAsync();
 
@@ -126,11 +126,12 @@ public class ShwapnoBrowserClient
 
         // Save JSON.
         var outputPath = Path.Combine(
-            AppContext.BaseDirectory,
+            _environment.ContentRootPath,
             "Ingestion",
             "Shwapno",
             "Data",
-            "dairy.json");
+            "dairy.json"
+        );
 
         Directory.CreateDirectory(
             Path.GetDirectoryName(outputPath)!);
