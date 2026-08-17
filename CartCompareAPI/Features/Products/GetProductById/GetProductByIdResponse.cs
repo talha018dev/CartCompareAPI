@@ -1,5 +1,16 @@
 namespace CartCompareAPI.Features.Products.GetProductById;
 
-public sealed record GetProductByIdResponse(Guid Id, Guid CategoryId, Guid? BrandId,
-    string Name, string NormalizedName, decimal Quantity, string Unit, string? ImageUrl,
-    bool IsActive, string Category, string? Brand);
+public sealed record GetProductByIdResponse()
+{
+    public Guid Id  {get; set;}
+    public Guid CategoryId {get; set;}
+    public Guid? BrandId {get; set;}
+    public string Name {get;set;} = string.Empty;
+    public string NormalizedName {get; set;} = string.Empty;
+    public decimal Quantity {get; set;}
+    public string Unit {get; set;} = string.Empty;
+    public string? ImageUrl {get; set;}
+    public bool IsActive {get; set;}
+    public string Category {get; set;} = string.Empty;
+    public string? Brand {get; set;}
+}

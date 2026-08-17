@@ -15,4 +15,10 @@ public static class GetProductsEndpoint
                 return Results.Ok(result);
             }).WithName("GetProducts").WithTags("Products");
     }
+
+    public static int Add(int a, int b)
+    {
+        var sum = a+b;
+        return sum;
+    }
 }

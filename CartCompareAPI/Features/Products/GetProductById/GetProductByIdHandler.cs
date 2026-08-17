@@ -7,8 +7,19 @@ public sealed class GetProductByIdHandler(AppDbContext db)
 {
     public Task<GetProductByIdResponse?> Handle(Guid id) => db.Products.AsNoTracking()
         .Where(x => x.Id == id)
-        .Select(x => new GetProductByIdResponse(x.Id, x.CategoryId, x.BrandId, x.Name,
-            x.NormalizedName, x.Quantity, x.Unit, x.ImageUrl, x.IsActive,
-            x.Category.Name, x.Brand == null ? null : x.Brand.Name))
+        .Select(x => new GetProductByIdResponse
+        {
+            Id = x.Id,
+            CategoryId = x.CategoryId,
+            BrandId = x.BrandId,
+            Name = x.Name,
+            NormalizedName = x.NormalizedName,
+            Quantity = x.Quantity,
+            Unit = x.Unit,
+            ImageUrl = x.ImageUrl,
+            IsActive = x.IsActive,
+            Category = x.Category.Name,
+            Brand = x.Brand != null ? x.Brand.Name : null
+        })
         .FirstOrDefaultAsync();
 }

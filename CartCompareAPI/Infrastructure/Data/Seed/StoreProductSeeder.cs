@@ -21,6 +21,7 @@ public static class StoreProductSeeder
         var oil = products.First(x => x.NormalizedName == "radhuni soybean oil 5l");
 
         var now = DateTime.UtcNow;
+        const string pranMilkImageUrl = "https://d2t8nl1y0ie1km.cloudfront.net/images/thumbs/65fa950a115075f231ec6f55_Pran-Full-Cream-Milk-Powder-500gm_1.webp?width=384&format=webp";
 
         var storeProducts = new List<StoreProduct>
         {
@@ -32,6 +33,7 @@ public static class StoreProductSeeder
                 ProductId = milk.Id,
                 ExternalProductId = "SHP-MILK-1L",
                 StoreProductName = "Pran UHT Milk 1L",
+                ImageUrl = pranMilkImageUrl,
                 Price = 95,
                 InStock = true,
                 LastUpdated = now,
@@ -43,6 +45,7 @@ public static class StoreProductSeeder
                 ProductId = milk.Id,
                 ExternalProductId = "AGR-MILK-1L",
                 StoreProductName = "Pran UHT Milk 1L",
+                ImageUrl = pranMilkImageUrl,
                 Price = 98,
                 InStock = true,
                 LastUpdated = now,

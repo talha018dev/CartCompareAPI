@@ -1,3 +1,4 @@
+using CartCompareApi.Ingestion.Shwapno.Browser;
 using CartCompareAPI.Features.Products;
 using CartCompareAPI.Infrastructure;
 using CartCompareAPI.Infrastructure.Data;
@@ -20,6 +21,9 @@ builder.Services.AddCors(options =>
             .AllowAnyMethod();
     });
 });
+
+builder.Services.AddScoped<ShwapnoBrowserClient>();
+
 
 var app = builder.Build();
 
