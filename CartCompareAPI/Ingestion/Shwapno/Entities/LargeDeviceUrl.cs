@@ -2,8 +2,8 @@ namespace CartCompareApi.Ingestion.Shwapno.Entities;
 
 public class LargeDeviceUrl
 {
-    public string imageUrl { get; set; }
-    public string fullSizeImageUrl { get; set; }
-    public int width { get; set; }
-    public int height { get; set; }
+    public string ImageUrl { get; set; } = string.Empty;
+    public string FullSizeImageUrl { get; set; }= string.Empty;
+    public int Width { get; set; }
+    public int Height { get; set; }
 }

@@ -12,7 +12,7 @@ public class ShwapnoProduct
     public bool ShowReviewInProductBox { get; set; }
     public int RatingAverage { get; set; }
     public int TotalReviews { get; set; }
-    public Price Price { get; set; } = null!;
+    public PriceClass Price { get; set; } = null!;
     public Picture Picture { get; set; } = null!;
     public bool EnableBuyNow { get; set; }
     public string Unit { get; set; } = string.Empty;
