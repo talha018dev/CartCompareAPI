@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace CartCompareApi.Ingestion.Shwapno.Browser;
 
 [ApiController]
-[Route("api/ingestion/shwapno")]
+[Route("api/v1/ingestion/shwapno")]
 public class ShwapnoController : ControllerBase
 {
     private readonly ShwapnoBrowserClient _browser;
@@ -13,11 +13,11 @@ public class ShwapnoController : ControllerBase
         _browser = browser;
     }
 
-    [HttpGet("dairy")]
-    public async Task<IActionResult> IngestShwapnoProducts()
+    [HttpGet]
+    public async Task<IActionResult> IngestShwapnoProducts([FromQuery] string category)
     {
-        await _browser.GetProductsFromShwapno();
+        await _browser.GetProductsFromShwapno(category);
 
-        return Ok("Playwright worked");
+        return Ok($"Shwapno {category} products ingested successfully.");
     }
 }

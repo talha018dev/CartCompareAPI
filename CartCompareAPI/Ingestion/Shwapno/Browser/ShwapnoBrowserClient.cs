@@ -6,8 +6,18 @@ namespace CartCompareApi.Ingestion.Shwapno.Browser;
 
 public class ShwapnoBrowserClient(IWebHostEnvironment _environment)
 {
-    public async Task GetProductsFromShwapno()
+    public async Task GetProductsFromShwapno(string category)
     {
+        var categorySlug = category.Trim().ToLowerInvariant();
+
+        if (string.IsNullOrWhiteSpace(categorySlug) ||
+            categorySlug.Any(character => !char.IsLetterOrDigit(character) && character != '-'))
+        {
+            throw new ArgumentException(
+                "Category must contain only letters, numbers, and hyphens.",
+                nameof(category));
+        }
+
         using var playwright = await Playwright.CreateAsync();
 
         await using var browser = await playwright.Chromium.LaunchAsync(
@@ -69,10 +79,10 @@ public class ShwapnoBrowserClient(IWebHostEnvironment _environment)
             }
         };
 
-        Console.WriteLine("Opening Shwapno dairy page...");
+        Console.WriteLine($"Opening Shwapno {categorySlug} page...");
 
         await page.GotoAsync(
-            "https://www.shwapno.com/dairy",
+            $"https://www.shwapno.com/{categorySlug}",
             new PageGotoOptions
             {
                 WaitUntil = WaitUntilState.NetworkIdle
@@ -130,7 +140,7 @@ public class ShwapnoBrowserClient(IWebHostEnvironment _environment)
             "Ingestion",
             "Shwapno",
             "Data",
-            "dairy.json"
+            $"{categorySlug}.json"
         );
 
         Directory.CreateDirectory(
