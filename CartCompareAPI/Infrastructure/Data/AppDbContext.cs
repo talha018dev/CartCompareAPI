@@ -11,5 +11,19 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Store> Stores => Set<Store>();
     public DbSet<Product> Products => Set<Product>();
     public DbSet<StoreProduct> StoreProducts => Set<StoreProduct>();
-    public DbSet<PriceHistory> PriceHistories => Set<PriceHistory>();
+    public DbSet<PriceHistory> PriceHistory => Set<PriceHistory>();
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<StoreProduct>()
+            .HasIndex(x => new { x.StoreId, x.ExternalProductId })
+            .IsUnique();
+
+        modelBuilder.Entity<PriceHistory>()
+.HasIndex(x => new { x.StoreProductId, x.RecordedAt });
+    }
+
+
 }

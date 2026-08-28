@@ -119,7 +119,7 @@ namespace CartCompareAPI.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "PriceHistories",
+                name: "PriceHistory",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -131,9 +131,9 @@ namespace CartCompareAPI.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_PriceHistories", x => x.Id);
+                    table.PrimaryKey("PK_PriceHistory", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_PriceHistories_StoreProducts_StoreProductId",
+                        name: "FK_PriceHistory_StoreProducts_StoreProductId",
                         column: x => x.StoreProductId,
                         principalTable: "StoreProducts",
                         principalColumn: "Id",
@@ -141,8 +141,8 @@ namespace CartCompareAPI.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_PriceHistories_StoreProductId",
-                table: "PriceHistories",
+                name: "IX_PriceHistory_StoreProductId",
+                table: "PriceHistory",
                 column: "StoreProductId");
 
             migrationBuilder.CreateIndex(
@@ -170,7 +170,7 @@ namespace CartCompareAPI.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "PriceHistories");
+                name: "PriceHistory");
 
             migrationBuilder.DropTable(
                 name: "StoreProducts");

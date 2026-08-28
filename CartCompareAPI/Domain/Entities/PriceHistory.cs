@@ -8,7 +8,7 @@ public class PriceHistory
     public Guid StoreProductId { get; set; }
 
     public decimal Price { get; set; }
-    public decimal? DiscountPrice { get; set; }
+    public decimal? OriginalPrice { get; set; }
 
     public bool InStock { get; set; }
 

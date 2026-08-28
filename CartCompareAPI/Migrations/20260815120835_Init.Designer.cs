@@ -88,7 +88,7 @@ namespace CartCompareAPI.Migrations
 
                     b.HasIndex("StoreProductId");
 
-                    b.ToTable("PriceHistories");
+                    b.ToTable("PriceHistory");
                 });
 
             modelBuilder.Entity("CartCompareApi.Domain.Entities.Product", b =>

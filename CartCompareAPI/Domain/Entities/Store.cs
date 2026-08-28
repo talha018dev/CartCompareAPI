@@ -9,5 +9,5 @@ public class Store
     public string? WebsiteUrl { get; set; }
     public bool IsActive { get; set; }
 
-    public ICollection<StoreProduct> Products { get; set; } = [];
+    public ICollection<StoreProduct> StoreProducts { get; set; } = [];
 }

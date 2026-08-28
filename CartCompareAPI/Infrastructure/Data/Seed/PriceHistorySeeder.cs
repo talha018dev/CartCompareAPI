@@ -19,7 +19,7 @@ public static class PriceHistorySeeder
                 {
                     StoreProductId = storeProduct.Id,
                     Price = storeProduct.Price + 5,
-                    DiscountPrice = null,
+                    OriginalPrice = null,
                     InStock = true,
                     RecordedAt = DateTime.UtcNow.AddDays(-14)
                 },
@@ -27,7 +27,7 @@ public static class PriceHistorySeeder
                 {
                     StoreProductId = storeProduct.Id,
                     Price = storeProduct.Price,
-                    DiscountPrice = storeProduct.OriginalPrice.HasValue
+                    OriginalPrice = storeProduct.OriginalPrice.HasValue
                         ? storeProduct.Price
                         : null,
                     InStock = storeProduct.InStock,
@@ -36,7 +36,7 @@ public static class PriceHistorySeeder
             ]);
         }
 
-        db.PriceHistories.AddRange(history);
+        db.PriceHistory.AddRange(history);
         db.SaveChanges();
     }
 }
