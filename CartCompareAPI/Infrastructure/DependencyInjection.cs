@@ -1,5 +1,6 @@
 using CartCompareAPI.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using CartCompareApi.Ingestion.Shwapno;
 
 namespace CartCompareAPI.Infrastructure;
 
@@ -15,6 +16,7 @@ public static class DependencyInjection
 
         services.AddDbContext<AppDbContext>(options =>
             options.UseNpgsql(connectionString));
+        services.AddScoped<ShwapnoDairyImporter>();
 
         return services;
     }

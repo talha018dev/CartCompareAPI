@@ -8,7 +8,7 @@ public class PriceClass
     public decimal unitPriceValue { get; set; }
     public int discountMaxQuantity { get; set; }
     public int discountMinQuantity { get; set; }
-    public decimal oldPrice { get; set; } 
+    public string? oldPrice { get; set; }
     public decimal? oldPriceValue { get; set; }
-    public decimal discountAmount { get; set; }
+    public string? discountAmount { get; set; }
 }

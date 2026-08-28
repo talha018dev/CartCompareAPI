@@ -1,4 +1,4 @@
-using CartCompareApi.Infrastructure.Data.Seed;
+using CartCompareApi.Ingestion.Shwapno;
 using Microsoft.EntityFrameworkCore;
 
 namespace CartCompareAPI.Infrastructure.Data;
@@ -11,6 +11,7 @@ public static class DatabaseInitialization
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         await db.Database.MigrateAsync();
-        DatabaseSeeder.Seed(db);
+        var importer = scope.ServiceProvider.GetRequiredService<ShwapnoDairyImporter>();
+        await importer.ImportAsync();
     }
 }
