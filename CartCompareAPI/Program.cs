@@ -10,6 +10,7 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddProductFeatures();
+builder.Services.AddShwapnoIngestion();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("LocalDevelopment", policy =>

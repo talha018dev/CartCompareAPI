@@ -12,6 +12,13 @@ namespace CartCompareAPI.Features.Products;
 
 public static class ProductsModule
 {
+    public static IServiceCollection AddShwapnoIngestion(this IServiceCollection services)
+    {
+        services.AddScoped<ShwapnoCatalogInitializer>();
+        services.AddScoped<ShwapnoProductMapper>();
+        services.AddScoped<ShwapnoJsonReader>();
+        return services;
+    }
     public static IServiceCollection AddProductFeatures(this IServiceCollection services)
     {
         services.AddScoped<GetProductsHandler>();
