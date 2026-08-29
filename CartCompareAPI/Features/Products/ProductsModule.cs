@@ -23,6 +23,7 @@ public static class ProductsModule
         services.AddScoped<BrandHandler>();
 
         services.AddScoped<ShwapnoCatalogInitializer>();
+        services.AddScoped<ShwapnoProductMapper>();
 
 
         return services;
