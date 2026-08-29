@@ -6,6 +6,7 @@ using CartCompareAPI.Features.Products.DeleteProduct;
 using CartCompareAPI.Features.Brands;
 using CartCompareAPI.Features.Categories;
 using CartCompareAPI.Features.Stores;
+using CartCompareAPI.Ingestion.Shwapno.Import;
 
 namespace CartCompareAPI.Features.Products;
 
@@ -20,6 +21,9 @@ public static class ProductsModule
         services.AddScoped<DeleteProductHandler>();
         services.AddScoped<CategoryHandler>();
         services.AddScoped<BrandHandler>();
+
+        services.AddScoped<ShwapnoCatalogInitializer>();
+
 
         return services;
     }

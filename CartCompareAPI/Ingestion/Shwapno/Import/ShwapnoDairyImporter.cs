@@ -2,50 +2,25 @@ using System.Text.Json;
 using CartCompareApi.Domain.Entities;
 using CartCompareApi.Ingestion.Shwapno.Entities;
 using CartCompareAPI.Infrastructure.Data;
+using CartCompareAPI.Ingestion.Shwapno.Import;
 using Microsoft.EntityFrameworkCore;
 
 namespace CartCompareApi.Ingestion.Shwapno;
 
-public sealed class ShwapnoDairyImporter(AppDbContext db, IWebHostEnvironment environment)
+public sealed class ShwapnoDairyImporter(AppDbContext db, IWebHostEnvironment environment, ShwapnoCatalogInitializer catalogInitializer)
 {
-    private const string CategorySlug = "dairy";
-    private const string StoreSlug = "shwapno";
 
     public async Task ImportAsync(CancellationToken cancellationToken = default)
     {
         var filePath = Path.Combine(environment.ContentRootPath, "Ingestion", "Shwapno", "Data", "dairy.json");
-        if (!File.Exists(filePath))
-            throw new FileNotFoundException("The Shwapno dairy data file was not found.", filePath);
-
-        await using var stream = File.OpenRead(filePath);
-        var sourceProducts = await JsonSerializer.DeserializeAsync<List<ShwapnoProduct>>(stream,
-            new JsonSerializerOptions { PropertyNameCaseInsensitive = true }, cancellationToken)
-            ?? throw new InvalidDataException("The Shwapno dairy data file does not contain a product array.");
+        var sourceProducts = await ShwapnoJsonReader.ReadProductsAsync(filePath);
 
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+
+        var catalog = await catalogInitializer.ShwapnoCatalogInitializedAsync();
+        var category = catalog.Category;
+        var store = catalog.Store;
         var now = DateTime.UtcNow;
-
-        var category = await db.Categories.SingleOrDefaultAsync(x => x.Slug == CategorySlug, cancellationToken);
-        if (category is null)
-        {
-            category = new Category { Name = "Dairy", Slug = CategorySlug };
-            db.Categories.Add(category);
-        }
-
-        var store = await db.Stores.SingleOrDefaultAsync(x => x.Slug == StoreSlug, cancellationToken);
-        if (store is null)
-        {
-            store = new Store
-            {
-                Name = "Shwapno",
-                Slug = StoreSlug,
-                WebsiteUrl = "https://www.shwapno.com",
-                IsActive = true
-            };
-            db.Stores.Add(store);
-        }
-
-        await db.SaveChangesAsync(cancellationToken);
 
         var existingStoreProducts = await db.StoreProducts
             .Where(x => x.StoreId == store.Id)
