@@ -24,6 +24,7 @@ public static class ProductsModule
 
         services.AddScoped<ShwapnoCatalogInitializer>();
         services.AddScoped<ShwapnoProductMapper>();
+        services.AddScoped<ShwapnoJsonReader>();
 
 
         return services;

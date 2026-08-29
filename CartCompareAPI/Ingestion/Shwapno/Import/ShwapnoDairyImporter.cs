@@ -9,7 +9,7 @@ namespace CartCompareApi.Ingestion.Shwapno;
 
 public sealed class ShwapnoDairyImporter(
         AppDbContext db,
-        IWebHostEnvironment environment,
+        ShwapnoJsonReader jsonReader,
         ShwapnoCatalogInitializer catalogInitializer,
         ShwapnoProductMapper productMapper
     )
@@ -17,8 +17,7 @@ public sealed class ShwapnoDairyImporter(
 
     public async Task ImportAsync(CancellationToken cancellationToken = default)
     {
-        var filePath = Path.Combine(environment.ContentRootPath, "Ingestion", "Shwapno", "Data", "dairy.json");
-        var sourceProducts = await ShwapnoJsonReader.ReadProductsAsync(filePath);
+        var sourceProducts = await jsonReader.ReadProductsAsync();
 
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
 
