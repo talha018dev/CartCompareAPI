@@ -19,6 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Docs\" />
     <Folder Include="Ingestion\Shwapno\Browser\" />
     <Content Update="Ingestion\Shwapno\Data\*.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
