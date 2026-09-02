@@ -1,6 +1,8 @@
 using System;
+using CartCompareApi.Canonicalization.Quantity;
 using CartCompareApi.Domain.Entities;
 using CartCompareApi.Ingestion.Shwapno.Entities;
+using CartCompareAPI.Canonicalization.Quantity;
 using CartCompareAPI.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -29,7 +31,14 @@ public class ShwapnoProductMapper()
         storeProduct.ImageUrl = GetImageUrl(source);
         storeProduct.LastUpdated = now;
 
+
+        var parser = new ProductQuantityParser();
+
+        ParsedQuantity? result =
+            parser.Parse("Fresh Milk 500 ml");
     }
+
+
 
     public StoreProduct Create(ShwapnoProduct source, Category category, Store store, DateTime now)
     {

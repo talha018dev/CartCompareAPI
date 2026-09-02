@@ -1,3 +1,4 @@
 <Solution>
+  <Project Path="CartCompareAPI.Tests/CartCompareAPI.Tests.csproj" />
   <Project Path="CartCompareAPI/CartCompareAPI.csproj" />
 </Solution>
