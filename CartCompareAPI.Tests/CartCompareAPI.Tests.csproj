@@ -22,4 +22,8 @@
     <ProjectReference Include="..\CartCompareAPI\CartCompareAPI.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Canonicalization\Quantity\" />
+  </ItemGroup>
+
 </Project>

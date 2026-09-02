@@ -42,7 +42,7 @@ public class ProductQuantityParser : IQuantityParser
 
         return matchedUnit switch
         {
-            "kg" => new ParsedQuantity(value, "kg"),
+            "kg" => new ParsedQuantity(value * 1000, "g"),
             "gm" or "g" => new ParsedQuantity(value, "g"),
             "l" => new ParsedQuantity(value * 1000, "ml"),
             "ml" => new ParsedQuantity(value, "ml"),
