@@ -19,6 +19,12 @@ public class ProductQuantityParser : IQuantityParser
         }
 
         MatchCollection matches = QuantityPattern.Matches(productName);
+
+        if (matches.Count == 0)
+        {
+            return null;
+        }
+
         Match match = matches[0];
         string matchedValue = match.Groups["value"].Value;
         string matchedUnit = match.Groups["unit"].Value.ToLowerInvariant();
