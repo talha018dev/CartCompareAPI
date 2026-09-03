@@ -1,6 +1,6 @@
 using System;
 using System.Text.Json;
-using CartCompareApi.Ingestion.Shwapno.Entities;
+using CartCompareAPI.Ingestion.Shwapno.Entities;
 
 namespace CartCompareAPI.Ingestion.Shwapno.Import;
 

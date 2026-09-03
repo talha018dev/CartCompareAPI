@@ -1,7 +1,6 @@
 using System;
 using System.Globalization;
 using System.Text.RegularExpressions;
-using CartCompareApi.Canonicalization.Quantity;
 
 namespace CartCompareAPI.Canonicalization.Quantity;
 

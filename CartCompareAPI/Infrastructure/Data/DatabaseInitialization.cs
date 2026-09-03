@@ -1,4 +1,4 @@
-using CartCompareApi.Ingestion.Shwapno;
+using CartCompareAPI.Ingestion.Shwapno;
 using Microsoft.EntityFrameworkCore;
 
 namespace CartCompareAPI.Infrastructure.Data;

@@ -1,5 +1,5 @@
 // Domain/Entities/Brand.cs
-namespace CartCompareApi.Domain.Entities;
+namespace CartCompareAPI.Domain.Entities;
 
 public class Brand
 {

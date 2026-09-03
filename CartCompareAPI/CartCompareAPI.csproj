@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <Folder Include="Canonicalization\" />
+    <Folder Include="Canonicalization\Names\" />
     <Folder Include="Canonicalization\Quantity\" />
     <Folder Include="Docs\" />
     <Folder Include="Ingestion\Shwapno\Browser\" />

@@ -1,4 +1,4 @@
-using CartCompareApi.Domain.Entities;
+using CartCompareAPI.Domain.Entities;
 
 namespace CartCompareAPI.Ingestion.Shwapno.Import;
 

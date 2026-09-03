@@ -1,4 +1,4 @@
-namespace CartCompareApi.Ingestion.Shwapno.Entities;
+namespace CartCompareAPI.Ingestion.Shwapno.Entities;
 
 public class Ribbon
 {

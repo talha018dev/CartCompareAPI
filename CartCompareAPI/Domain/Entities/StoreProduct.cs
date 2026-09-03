@@ -1,5 +1,5 @@
 // Domain/Entities/StoreProduct.cs
-namespace CartCompareApi.Domain.Entities;
+namespace CartCompareAPI.Domain.Entities;
 
 public class StoreProduct
 {

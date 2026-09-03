@@ -1,4 +1,4 @@
-using CartCompareApi.Domain.Entities;
+using CartCompareAPI.Domain.Entities;
 using CartCompareAPI.Features.Shared;
 using CartCompareAPI.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;

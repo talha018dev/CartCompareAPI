@@ -1,5 +1,5 @@
 using System;
-using CartCompareApi.Domain.Entities;
+using CartCompareAPI.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace CartCompareAPI.Infrastructure.Data;

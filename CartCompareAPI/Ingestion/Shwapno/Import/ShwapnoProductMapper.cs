@@ -1,8 +1,7 @@
 using System;
-using CartCompareApi.Canonicalization.Quantity;
-using CartCompareApi.Domain.Entities;
-using CartCompareApi.Ingestion.Shwapno.Entities;
 using CartCompareAPI.Canonicalization.Quantity;
+using CartCompareAPI.Domain.Entities;
+using CartCompareAPI.Ingestion.Shwapno.Entities;
 using CartCompareAPI.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 

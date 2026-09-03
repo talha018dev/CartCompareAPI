@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 
-namespace CartCompareApi.Ingestion.Shwapno.Browser;
+namespace CartCompareAPI.Ingestion.Shwapno.Browser;
 
 [ApiController]
 [Route("api/v1/ingestion/shwapno")]

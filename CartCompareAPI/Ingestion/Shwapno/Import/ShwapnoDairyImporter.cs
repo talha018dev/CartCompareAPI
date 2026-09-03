@@ -1,11 +1,11 @@
 using System.Text.Json;
-using CartCompareApi.Domain.Entities;
-using CartCompareApi.Ingestion.Shwapno.Entities;
+using CartCompareAPI.Domain.Entities;
+using CartCompareAPI.Ingestion.Shwapno.Entities;
 using CartCompareAPI.Infrastructure.Data;
 using CartCompareAPI.Ingestion.Shwapno.Import;
 using Microsoft.EntityFrameworkCore;
 
-namespace CartCompareApi.Ingestion.Shwapno;
+namespace CartCompareAPI.Ingestion.Shwapno;
 
 public sealed class ShwapnoDairyImporter(
         AppDbContext db,

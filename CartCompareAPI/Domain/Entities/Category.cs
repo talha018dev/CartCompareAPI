@@ -1,5 +1,5 @@
 // Domain/Entities/Category.cs
-namespace CartCompareApi.Domain.Entities;
+namespace CartCompareAPI.Domain.Entities;
 
 public class Category
 {

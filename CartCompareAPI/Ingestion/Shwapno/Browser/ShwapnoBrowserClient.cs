@@ -1,8 +1,8 @@
 using System.Text.Json;
-using CartCompareApi.Ingestion.Shwapno.Entities;
+using CartCompareAPI.Ingestion.Shwapno.Entities;
 using Microsoft.Playwright;
 
-namespace CartCompareApi.Ingestion.Shwapno.Browser;
+namespace CartCompareAPI.Ingestion.Shwapno.Browser;
 
 public class ShwapnoBrowserClient(IWebHostEnvironment _environment)
 {

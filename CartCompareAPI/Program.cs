@@ -1,4 +1,4 @@
-using CartCompareApi.Ingestion.Shwapno.Browser;
+using CartCompareAPI.Ingestion.Shwapno.Browser;
 using CartCompareAPI.Features.Products;
 using CartCompareAPI.Infrastructure;
 using CartCompareAPI.Infrastructure.Data;

@@ -1,5 +1,5 @@
 // Domain/Entities/PriceHistory.cs
-namespace CartCompareApi.Domain.Entities;
+namespace CartCompareAPI.Domain.Entities;
 
 public class PriceHistory
 {

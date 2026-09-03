@@ -1,5 +1,4 @@
 using System;
-using CartCompareApi.Canonicalization.Quantity;
 using CartCompareAPI.Canonicalization.Quantity;
 
 namespace CartCompareAPI.Tests.Canonicalization.Quantity;
