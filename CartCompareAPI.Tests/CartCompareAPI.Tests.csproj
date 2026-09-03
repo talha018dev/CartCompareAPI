@@ -23,6 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Canonicalization\Names\" />
     <Folder Include="Canonicalization\Quantity\" />
   </ItemGroup>
 
