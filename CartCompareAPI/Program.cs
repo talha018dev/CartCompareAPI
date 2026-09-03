@@ -1,4 +1,5 @@
 using CartCompareAPI.Ingestion.Shwapno.Browser;
+using CartCompareAPI.Canonicalization;
 using CartCompareAPI.Features.Products;
 using CartCompareAPI.Infrastructure;
 using CartCompareAPI.Infrastructure.Data;
@@ -8,6 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
+builder.Services.AddCanonicalization(builder.Configuration);
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddProductFeatures();
 builder.Services.AddShwapnoIngestion();
