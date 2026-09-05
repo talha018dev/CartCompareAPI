@@ -8,11 +8,12 @@ public class ProductQuantityParser : IQuantityParser
 {
 
     private static readonly Regex QuantityPattern = new(
-        @"(?<![\p{L}\p{N}])(?<value>\d+(?:\.\d+)?)\s*(?<unit>kg|gm|g|ml|l|pcs|pc|pieces?|piece)(?!\p{L})",
+        @"(?<![\p{L}\p{N}])(?<value>\d+(?:\.\d+)?)\s*(?<unit>kg|gm|g|ml|litres?|liters?|ltr|l|portions?|pcs|pc|pieces?|piece)(?!\p{L})",
         RegexOptions.IgnoreCase | RegexOptions.Compiled);
     public ParsedQuantity? Parse(string productName)
     {
-        if (string.IsNullOrWhiteSpace(productName))
+        if (string.IsNullOrWhiteSpace(productName)
+            || productName.Contains('±'))
         {
             return null;
         }
@@ -47,11 +48,13 @@ public class ProductQuantityParser : IQuantityParser
 
         return matchedUnit switch
         {
-            "kg" => new ParsedQuantity(value * 1000, "g"),
-            "gm" or "g" => new ParsedQuantity(value, "g"),
-            "l" => new ParsedQuantity(value * 1000, "ml"),
-            "ml" => new ParsedQuantity(value, "ml"),
-            "pc" or "pcs" or "piece" or "pieces" => new ParsedQuantity(value, "count"),
+            "kg" => new ParsedQuantity(value * 1000, "g", match.Value),
+            "gm" or "g" => new ParsedQuantity(value, "g", match.Value),
+            "l" or "ltr" or "liter" or "liters" or "litre" or "litres"
+                => new ParsedQuantity(value * 1000, "ml", match.Value),
+            "ml" => new ParsedQuantity(value, "ml", match.Value),
+            "pc" or "pcs" or "piece" or "pieces" or "portion" or "portions"
+                => new ParsedQuantity(value, "count", match.Value),
             _ => null
         };
     }

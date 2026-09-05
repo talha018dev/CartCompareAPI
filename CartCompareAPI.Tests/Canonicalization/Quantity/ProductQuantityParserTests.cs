@@ -58,4 +58,30 @@ public sealed class ProductQuantityParserTests
         Assert.Equal(expectedUnit, result.Unit);
     }
 
+    [Theory]
+    [InlineData("Milk 1Ltr.", 1000, "ml")]
+    [InlineData("Milk 1 litre", 1000, "ml")]
+    [InlineData("Cheese 24 Portions", 24, "count")]
+    public void Parse_WithAdditionalCatalogUnits_ShouldNormalizeQuantity(
+        string input,
+        decimal expectedValue,
+        string expectedUnit)
+    {
+        ParsedQuantity? result = parser.Parse(input);
+
+        Assert.NotNull(result);
+        Assert.Equal(expectedValue, result.Value);
+        Assert.Equal(expectedUnit, result.Unit);
+    }
+
+    [Theory]
+    [InlineData("Ghee 400(±)50gm")]
+    [InlineData("Condensed Milk 397(±)3gm")]
+    public void Parse_WithToleranceQuantity_ShouldReturnNull(string input)
+    {
+        ParsedQuantity? result = parser.Parse(input);
+
+        Assert.Null(result);
+    }
+
 }

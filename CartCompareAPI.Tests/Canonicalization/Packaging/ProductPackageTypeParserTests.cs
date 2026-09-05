@@ -14,6 +14,7 @@ public sealed class ProductPackageTypeParserTests
     [InlineData("Milk Powder 1kg Bag-in-Box", "bib")]
     [InlineData("Diploma Milk Powder 500gm (Foil Pack)", "foil")]
     [InlineData("Danish Milk Powder 500gm (Poly)", "poly")]
+    [InlineData("Pran UHT Milk 1000ml (Tetra)", "tetra")]
     [InlineData("Butter 50gmX4Pcs (Box)", "box")]
     [InlineData("Ghee 150gm (Glass Jar)", "glass jar")]
     public void Parse_WithKnownPackage_ShouldReturnNormalizedType(

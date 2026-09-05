@@ -12,6 +12,7 @@ public sealed class ProductPackageTypeParser(
             ["bib"] = ["bib", "bag in box"],
             ["foil"] = ["foil"],
             ["poly"] = ["poly"],
+            ["tetra"] = ["tetra", "tetra pack"],
             ["box"] = ["box"],
             ["glass jar"] = ["glass jar"]
         };
@@ -48,8 +49,18 @@ public sealed class ProductPackageTypeParser(
             .Distinct(StringComparer.Ordinal)
             .ToList();
 
-        return matches.Count == 1
-            ? new ParsedPackageType(matches[0])
-            : null;
+        if (matches.Count != 1)
+        {
+            return null;
+        }
+
+        string packageType = matches[0];
+        string matchedAlias = aliasMatches
+            .Where(match => match.PackageType == packageType)
+            .OrderByDescending(match => match.Alias.Length)
+            .First()
+            .Alias;
+
+        return new ParsedPackageType(packageType, matchedAlias);
     }
 }

@@ -1,5 +1,4 @@
-
-using CartCompareAPI.Canonicalization.Quantity;
+namespace CartCompareAPI.Canonicalization.Quantity;
 
 public interface IQuantityParser
 {
