@@ -21,8 +21,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasIndex(x => new { x.StoreId, x.ExternalProductId })
             .IsUnique();
 
+        modelBuilder.Entity<StoreProduct>()
+            .HasOne(x => x.Product)
+            .WithMany(x => x.StoreProducts)
+            .HasForeignKey(x => x.ProductId)
+            .IsRequired(false);
+
         modelBuilder.Entity<PriceHistory>()
-.HasIndex(x => new { x.StoreProductId, x.RecordedAt });
+            .HasIndex(x => new { x.StoreProductId, x.RecordedAt });
     }
 
 

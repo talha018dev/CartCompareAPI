@@ -1,27 +1,12 @@
-using System;
-using CartCompareAPI.Canonicalization.Quantity;
 using CartCompareAPI.Domain.Entities;
 using CartCompareAPI.Ingestion.Shwapno.Entities;
-using CartCompareAPI.Infrastructure.Data;
-using Microsoft.EntityFrameworkCore;
 
 namespace CartCompareAPI.Ingestion.Shwapno.Import;
 
-public class ShwapnoProductMapper()
+public sealed class ShwapnoProductMapper
 {
-    // public async Task<Dictionary<string, StoreProduct>> GetExistingProductsAsync()
-    // {
-    //     var existingProducts = await db.StoreProducts
-    //     .Where(p => p.Store.Slug == "shwapno")
-    //     .Include(p => p.Product)
-    //     .ToDictionaryAsync(x => x.ExternalProductId, cancellationToken: default);
-
-    //     return existingProducts;
-    // }
-
     public void Update(StoreProduct storeProduct, ShwapnoProduct source, DateTime now)
     {
-
         storeProduct.StoreProductName = source.Name;
         storeProduct.Price = source.Price.PriceValue;
         storeProduct.OriginalPrice = source.Price.oldPriceValue;
@@ -29,36 +14,14 @@ public class ShwapnoProductMapper()
         storeProduct.ProductUrl = GetProductUrl(source);
         storeProduct.ImageUrl = GetImageUrl(source);
         storeProduct.LastUpdated = now;
-
-
-        var parser = new ProductQuantityParser();
-
-        ParsedQuantity? result =
-            parser.Parse("Fresh Milk 500 ml");
     }
 
-
-
-    public StoreProduct Create(ShwapnoProduct source, Category category, Store store, DateTime now)
+    public StoreProduct Create(ShwapnoProduct source, Store store, DateTime now)
     {
-
-        var product = new Product
-        {
-            CategoryId = category.Id,
-            Name = source.Name.Trim(),
-            NormalizedName = source.Name.Trim().ToLowerInvariant(),
-            Quantity = source.OrderPackageQuantity,
-            Unit = source.Unit.Trim(),
-            ImageUrl = GetImageUrl(source),
-            IsActive = true,
-            CreatedAt = now,
-            UpdatedAt = now
-        };
-
         var storeProduct = new StoreProduct
         {
             StoreId = store.Id,
-            Product = product,
+            ProductId = null,
             ExternalProductId = source.Sku,
             StoreProductName = source.Name,
             Price = source.Price.PriceValue,
