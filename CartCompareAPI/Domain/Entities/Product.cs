@@ -5,6 +5,10 @@ public class Product
 {
     public Guid Id { get; set; }
 
+    public string CanonicalKey { get; set; } = string.Empty;
+    public string? Variant { get; set; }
+    public string? PackageType { get; set; }
+
     public Guid CategoryId { get; set; }
     public Guid? BrandId { get; set; }
 
