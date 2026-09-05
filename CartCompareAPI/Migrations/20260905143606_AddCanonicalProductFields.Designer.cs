@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace CartCompareAPI.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260905142659_AddCanonicalProductFields")]
+    [Migration("20260905143606_AddCanonicalProductFields")]
     partial class AddCanonicalProductFields
     {
         /// <inheritdoc />
@@ -101,7 +101,6 @@ namespace CartCompareAPI.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<string>("CanonicalKey")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<Guid>("CategoryId")

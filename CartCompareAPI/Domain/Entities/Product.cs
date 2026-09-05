@@ -5,7 +5,7 @@ public class Product
 {
     public Guid Id { get; set; }
 
-    public string CanonicalKey { get; set; } = string.Empty;
+   public string? CanonicalKey { get; set; }
     public string? Variant { get; set; }
     public string? PackageType { get; set; }
 

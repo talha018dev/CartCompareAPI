@@ -14,8 +14,7 @@ namespace CartCompareAPI.Migrations
                 name: "CanonicalKey",
                 table: "Products",
                 type: "text",
-                nullable: false,
-                defaultValue: "");
+                nullable: true);
 
             migrationBuilder.AddColumn<string>(
                 name: "PackageType",

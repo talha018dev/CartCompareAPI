@@ -98,7 +98,6 @@ namespace CartCompareAPI.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<string>("CanonicalKey")
-                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<Guid>("CategoryId")
