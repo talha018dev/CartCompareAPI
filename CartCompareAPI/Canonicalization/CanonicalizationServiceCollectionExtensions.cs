@@ -1,5 +1,6 @@
 using CartCompareAPI.Canonicalization.Brands;
 using CartCompareAPI.Canonicalization.Names;
+using CartCompareAPI.Canonicalization.Packaging;
 
 namespace CartCompareAPI.Canonicalization;
 
@@ -26,6 +27,7 @@ public static class CanonicalizationServiceCollectionExtensions
 
         services.AddSingleton<IProductNameNormalizer, ProductNameNormalizer>();
         services.AddSingleton<IBrandResolver, BrandResolver>();
+        services.AddSingleton<IPackageTypeParser, ProductPackageTypeParser>();
 
         return services;
     }
