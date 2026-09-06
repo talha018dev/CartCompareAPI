@@ -12,6 +12,7 @@ which contains the broader domain rules and matching policy.
 ## Progress
 
 - Steps 1–3 completed on 2026-09-05.
+- Steps 4–5 completed on 2026-09-06.
 - Baseline before these changes: 86 tests passed.
 - Verification after these changes: 89 tests passed.
 - Known baseline warning: the test build reports an EF Core Relational version
@@ -65,6 +66,8 @@ passes.
 
 ### 4. Complete the canonical `Product` schema
 
+**Status:** Completed.
+
 - Add `CanonicalKey`, `Variant`, and `PackageType` to `Product`.
 - Store multiple variant values in a stable representation: lowercase the
   values, sort them using ordinal comparison, and join them with `+`.
@@ -77,6 +80,8 @@ passes.
 keys are rejected.
 
 ### 5. Build brand definitions from the database
+
+**Status:** Completed.
 
 - Add a service that loads `Brand` records and converts them to
   `BrandDefinition` values.
