@@ -1,21 +1,36 @@
 namespace CartCompareAPI.Canonicalization.StoreProducts;
 
-public sealed record StoreProductCanonicalizationResult(
-    Guid StoreProductId,
-    StoreProductCanonicalizationOutcome Outcome,
-    Guid? ProductId,
-    StoreProductCanonicalizationFailure? Failure)
+public sealed record StoreProductCanonicalizationResult
 {
+    private StoreProductCanonicalizationResult(
+        Guid storeProductId,
+        StoreProductCanonicalizationOutcome outcome,
+        Guid? productId,
+        StoreProductCanonicalizationFailure? failure
+    )
+    {
+        StoreProductId = storeProductId;
+        Outcome = outcome;
+        ProductId = productId;
+        Failure = failure;
+    }
+
+    public Guid StoreProductId { get; }
+    public StoreProductCanonicalizationOutcome Outcome { get; }
+    public Guid? ProductId { get; }
+    public StoreProductCanonicalizationFailure? Failure { get; }
+
+
     public static StoreProductCanonicalizationResult Matched(
         Guid storeProductId,
         Guid productId
     )
     {
         return new StoreProductCanonicalizationResult(
-            StoreProductId: storeProductId,
-            Outcome: StoreProductCanonicalizationOutcome.Matched,
-            ProductId: productId,
-            Failure: null
+            storeProductId,
+            outcome: StoreProductCanonicalizationOutcome.Matched,
+            productId,
+            failure: null
         );
     }
 
