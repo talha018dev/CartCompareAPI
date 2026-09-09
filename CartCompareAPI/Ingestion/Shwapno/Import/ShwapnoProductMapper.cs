@@ -7,6 +7,15 @@ public sealed class ShwapnoProductMapper
 {
     public void Update(StoreProduct storeProduct, ShwapnoProduct source, DateTime now)
     {
+        decimal newPrice = source.Price.PriceValue;
+        decimal? newOriginalPrice = source.Price.oldPriceValue;
+        bool newInStock = IsInStock(source);
+
+        bool offerChanged =
+            storeProduct.Price != newPrice ||
+            storeProduct.OriginalPrice != newOriginalPrice ||
+            storeProduct.InStock != newInStock;
+
         storeProduct.StoreProductName = source.Name;
         storeProduct.Price = source.Price.PriceValue;
         storeProduct.OriginalPrice = source.Price.oldPriceValue;
@@ -14,6 +23,17 @@ public sealed class ShwapnoProductMapper
         storeProduct.ProductUrl = GetProductUrl(source);
         storeProduct.ImageUrl = GetImageUrl(source);
         storeProduct.LastUpdated = now;
+
+        if (offerChanged)
+        {
+            storeProduct.PriceHistory.Add(new PriceHistory
+            {
+                Price = newPrice,
+                OriginalPrice = newOriginalPrice,
+                InStock = newInStock,
+                RecordedAt = now
+            });
+        }
     }
 
     public StoreProduct Create(ShwapnoProduct source, Store store, DateTime now)
