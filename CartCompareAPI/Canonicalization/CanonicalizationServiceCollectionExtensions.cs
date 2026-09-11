@@ -3,6 +3,7 @@ using CartCompareAPI.Canonicalization.Names;
 using CartCompareAPI.Canonicalization.Packaging;
 using CartCompareAPI.Canonicalization.Products;
 using CartCompareAPI.Canonicalization.Quantity;
+using CartCompareAPI.Canonicalization.StoreProducts;
 using CartCompareAPI.Canonicalization.Variants;
 
 namespace CartCompareAPI.Canonicalization;
@@ -36,7 +37,9 @@ public static class CanonicalizationServiceCollectionExtensions
         services.AddSingleton<IVariantParser, ProductVariantParser>();
         services.AddSingleton<IProductNormalizationService, ProductNormalizationService>();
         services.AddSingleton<ICanonicalKeyBuilder, CanonicalKeyBuilder>();
+
         services.AddScoped<IBrandDefinitionProvider, DatabaseBrandDefinitionProvider>();
+        services.AddScoped<IStoreProductCanonicalizer,StoreProductCanonicalizer>();
 
         return services;
     }
