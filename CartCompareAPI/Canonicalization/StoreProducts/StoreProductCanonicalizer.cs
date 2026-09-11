@@ -1,15 +1,15 @@
 using System;
 using CartCompareAPI.Canonicalization.Brands;
 using CartCompareAPI.Canonicalization.Products;
+using CartCompareAPI.Canonicalization.Variants;
 using CartCompareAPI.Domain.Entities;
 using CartCompareAPI.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
-
 namespace CartCompareAPI.Canonicalization.StoreProducts;
 
-public class StoreProductCanonicalizer
-    (AppDbContext db,
+public sealed class StoreProductCanonicalizer(
+    AppDbContext db,
     IProductNormalizationService normalizationService,
     ICanonicalKeyBuilder canonicalKeyBuilder,
     TimeProvider timeProvider)
@@ -19,23 +19,21 @@ public class StoreProductCanonicalizer
         StoreProduct storeProduct,
         Category category,
         IReadOnlyCollection<BrandDefinition> brandDefinitions,
-        CancellationToken cancellationToken = default
-    )
+        CancellationToken cancellationToken = default)
     {
-        ProductNormalizationResult normalizationResult = normalizationService.Normalize(
-            storeProduct.StoreProductName,
-            brandDefinitions
-        );
+        ProductNormalizationResult normalizationResult =
+            normalizationService.Normalize(
+                storeProduct.StoreProductName,
+                brandDefinitions);
 
         if (!normalizationResult.IsSuccess)
         {
             StoreProductCanonicalizationFailure failure =
                 normalizationResult.Failure!.Value.ToStoreProductFailure();
 
-            StoreProductCanonicalizationResult unresolvedResult =
-                StoreProductCanonicalizationResult.Unresolved(storeProduct.Id, failure);
-
-            return unresolvedResult;
+            return StoreProductCanonicalizationResult.Unresolved(
+                storeProduct.Id,
+                failure);
         }
 
         NormalizedProduct normalizedProduct = normalizationResult.Product!;
@@ -47,24 +45,23 @@ public class StoreProductCanonicalizer
 
         Product? existingProduct = await db.Products
             .SingleOrDefaultAsync(
-                p => p.CanonicalKey == canonicalKey,
-                cancellationToken
-        );
+                product => product.CanonicalKey == canonicalKey,
+                cancellationToken);
 
         if (existingProduct is not null)
         {
-            storeProduct.ProductId = existingProduct.Id;
-            storeProduct.Product = existingProduct;
+            Link(storeProduct, existingProduct);
 
             return StoreProductCanonicalizationResult.Matched(
                 storeProduct.Id,
                 existingProduct.Id);
         }
 
-        Brand? brand = await db.Brands.SingleOrDefaultAsync(
-            b => b.Slug == normalizedProduct.Brand.BrandKey,
-            cancellationToken
-        );
+        Brand? brand = await db.Brands
+            .SingleOrDefaultAsync(
+                candidate =>
+                    candidate.Slug == normalizedProduct.Brand.BrandKey,
+                cancellationToken);
 
         if (brand is null)
         {
@@ -73,17 +70,38 @@ public class StoreProductCanonicalizer
                 StoreProductCanonicalizationFailure.BrandRecordNotFound);
         }
 
-        string? variant = normalizedProduct.Variant is null
-            ? null
-            : string.Join(
-                "+",
-                normalizedProduct.Variant.Values
-                    .Select(value => value.Trim().ToLowerInvariant())
-                    .OrderBy(value => value, StringComparer.Ordinal));
-
         DateTime now = timeProvider.GetUtcNow().UtcDateTime;
+        Product newProduct = CreateProduct(
+            storeProduct,
+            category,
+            brand,
+            normalizedProduct,
+            canonicalKey,
+            now);
 
-        var newProduct = new Product
+        db.Products.Add(newProduct);
+        Link(storeProduct, newProduct);
+
+        return StoreProductCanonicalizationResult.Created(
+            storeProduct.Id,
+            newProduct.Id);
+    }
+
+    private static void Link(StoreProduct storeProduct, Product product)
+    {
+        storeProduct.ProductId = product.Id;
+        storeProduct.Product = product;
+    }
+
+    private static Product CreateProduct(
+        StoreProduct storeProduct,
+        Category category,
+        Brand brand,
+        NormalizedProduct normalizedProduct,
+        string canonicalKey,
+        DateTime now)
+    {
+        return new Product
         {
             Id = Guid.NewGuid(),
             CategoryId = category.Id,
@@ -95,20 +113,23 @@ public class StoreProductCanonicalizer
             CanonicalKey = canonicalKey,
             Quantity = normalizedProduct.Quantity.Value,
             Unit = normalizedProduct.Quantity.Unit,
-            Variant = variant,
+            Variant = FormatVariant(normalizedProduct.Variant),
             PackageType = normalizedProduct.PackageType?.Value,
             ImageUrl = storeProduct.ImageUrl,
             IsActive = true,
             CreatedAt = now,
             UpdatedAt = now
         };
+    }
 
-        db.Products.Add(newProduct);
-        storeProduct.ProductId = newProduct.Id;
-        storeProduct.Product = newProduct;
-
-        return StoreProductCanonicalizationResult.Created(
-            storeProduct.Id,
-            newProduct.Id);
+    private static string? FormatVariant(ParsedVariant? variant)
+    {
+        return variant is null
+            ? null
+            : string.Join(
+                "+",
+                variant.Values
+                    .Select(value => value.Trim().ToLowerInvariant())
+                    .OrderBy(value => value, StringComparer.Ordinal));
     }
 }
