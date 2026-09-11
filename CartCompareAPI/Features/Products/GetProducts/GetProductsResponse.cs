@@ -1,3 +1,5 @@
+using CartCompareAPI.Features.StoreProducts;
+
 namespace CartCompareAPI.Features.Products.GetProducts;
 
 public class GetProductsResponse
@@ -15,4 +17,6 @@ public class GetProductsResponse
     public string Unit { get; set; } = string.Empty;
 
     public string? ImageUrl { get; set; }
+
+    public List<StoreProductResponse> StoreProducts { get; set; } = null!;
 }

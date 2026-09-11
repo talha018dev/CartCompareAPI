@@ -6,7 +6,7 @@ public static class GetProductsEndpoint
 {
     public static void MapGetProducts(this IEndpointRouteBuilder app)
     {
-        app.MapGet("/api/products",
+        app.MapGet("/api/v1/products",
             async (
                 [AsParameters] GetProductsRequest request,
                 GetProductsHandler handler) =>
