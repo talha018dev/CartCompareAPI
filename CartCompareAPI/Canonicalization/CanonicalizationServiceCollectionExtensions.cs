@@ -37,9 +37,10 @@ public static class CanonicalizationServiceCollectionExtensions
         services.AddSingleton<IVariantParser, ProductVariantParser>();
         services.AddSingleton<IProductNormalizationService, ProductNormalizationService>();
         services.AddSingleton<ICanonicalKeyBuilder, CanonicalKeyBuilder>();
+        services.AddSingleton(TimeProvider.System);
 
         services.AddScoped<IBrandDefinitionProvider, DatabaseBrandDefinitionProvider>();
-        services.AddScoped<IStoreProductCanonicalizer,StoreProductCanonicalizer>();
+        services.AddScoped<IStoreProductCanonicalizer, StoreProductCanonicalizer>();
 
         return services;
     }

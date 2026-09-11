@@ -11,7 +11,8 @@ namespace CartCompareAPI.Canonicalization.StoreProducts;
 public class StoreProductCanonicalizer
     (AppDbContext db,
     IProductNormalizationService normalizationService,
-    ICanonicalKeyBuilder canonicalKeyBuilder)
+    ICanonicalKeyBuilder canonicalKeyBuilder,
+    TimeProvider timeProvider)
     : IStoreProductCanonicalizer
 {
     public async Task<StoreProductCanonicalizationResult> CanonicalizeAsync(
@@ -58,6 +59,18 @@ public class StoreProductCanonicalizer
             return StoreProductCanonicalizationResult.Matched(
                 storeProduct.Id,
                 existingProduct.Id);
+        }
+
+        Brand? brand = await db.Brands.SingleOrDefaultAsync(
+            b => b.Slug == normalizedProduct.Brand.BrandKey,
+            cancellationToken
+        );
+
+        if (brand is null)
+        {
+            return StoreProductCanonicalizationResult.Unresolved(
+                storeProduct.Id,
+                StoreProductCanonicalizationFailure.BrandRecordNotFound);
         }
 
         throw new NotImplementedException(

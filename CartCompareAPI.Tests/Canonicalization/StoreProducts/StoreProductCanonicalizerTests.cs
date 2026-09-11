@@ -21,7 +21,8 @@ public sealed class StoreProductCanonicalizerTests
         var canonicalizer = new StoreProductCanonicalizer(
             db,
             normalizationService,
-            new CanonicalKeyBuilder());
+            new CanonicalKeyBuilder(),
+            TimeProvider.System);
         var storeProduct = new StoreProduct
         {
             Id = Guid.NewGuid(),
@@ -85,7 +86,8 @@ public sealed class StoreProductCanonicalizerTests
             db,
             new StubNormalizationService(
                 ProductNormalizationResult.Success(normalizedProduct)),
-            keyBuilder);
+            keyBuilder,
+            TimeProvider.System);
         var storeProduct = new StoreProduct
         {
             Id = Guid.NewGuid(),
