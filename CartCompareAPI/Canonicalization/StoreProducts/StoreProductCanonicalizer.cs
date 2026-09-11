@@ -73,7 +73,42 @@ public class StoreProductCanonicalizer
                 StoreProductCanonicalizationFailure.BrandRecordNotFound);
         }
 
-        throw new NotImplementedException(
-            $"Canonical product lookup is not implemented for key '{canonicalKey}'.");
+        string? variant = normalizedProduct.Variant is null
+            ? null
+            : string.Join(
+                "+",
+                normalizedProduct.Variant.Values
+                    .Select(value => value.Trim().ToLowerInvariant())
+                    .OrderBy(value => value, StringComparer.Ordinal));
+
+        DateTime now = timeProvider.GetUtcNow().UtcDateTime;
+
+        var newProduct = new Product
+        {
+            Id = Guid.NewGuid(),
+            CategoryId = category.Id,
+            Category = category,
+            BrandId = brand.Id,
+            Brand = brand,
+            Name = normalizedProduct.SourceName.Trim(),
+            NormalizedName = normalizedProduct.NormalizedName,
+            CanonicalKey = canonicalKey,
+            Quantity = normalizedProduct.Quantity.Value,
+            Unit = normalizedProduct.Quantity.Unit,
+            Variant = variant,
+            PackageType = normalizedProduct.PackageType?.Value,
+            ImageUrl = storeProduct.ImageUrl,
+            IsActive = true,
+            CreatedAt = now,
+            UpdatedAt = now
+        };
+
+        db.Products.Add(newProduct);
+        storeProduct.ProductId = newProduct.Id;
+        storeProduct.Product = newProduct;
+
+        return StoreProductCanonicalizationResult.Created(
+            storeProduct.Id,
+            newProduct.Id);
     }
 }
