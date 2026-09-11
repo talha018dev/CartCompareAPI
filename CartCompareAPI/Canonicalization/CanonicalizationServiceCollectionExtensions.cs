@@ -20,7 +20,7 @@ public static class CanonicalizationServiceCollectionExtensions
                 BrandCanonicalizationOptions.SectionName))
             .Validate(
                 options => options.BrandAliases.All(IsValidAliasDefinition),
-                "Each brand alias definition requires a brand key and at least one nonblank alias.")
+                "Each brand definition requires a brand key, display name, and at least one nonblank alias.")
             .Validate(
                 options => options.BrandAliases
                     .Select(definition => definition.BrandKey)
@@ -40,6 +40,7 @@ public static class CanonicalizationServiceCollectionExtensions
         services.AddSingleton(TimeProvider.System);
 
         services.AddScoped<IBrandDefinitionProvider, DatabaseBrandDefinitionProvider>();
+        services.AddScoped<BrandCatalogInitializer>();
         services.AddScoped<IStoreProductCanonicalizer, StoreProductCanonicalizer>();
 
         return services;
@@ -49,6 +50,7 @@ public static class CanonicalizationServiceCollectionExtensions
         BrandAliasDefinition definition)
     {
         return !string.IsNullOrWhiteSpace(definition.BrandKey)
+            && !string.IsNullOrWhiteSpace(definition.DisplayName)
             && definition.Aliases.Count > 0
             && definition.Aliases.All(
                 alias => !string.IsNullOrWhiteSpace(alias));

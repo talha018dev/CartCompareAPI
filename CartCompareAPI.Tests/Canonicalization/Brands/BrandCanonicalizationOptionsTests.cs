@@ -14,6 +14,7 @@ public sealed class BrandCanonicalizationOptionsTests
         IConfiguration configuration = BuildConfiguration(new()
         {
             ["Canonicalization:BrandAliases:0:BrandKey"] = "marks",
+            ["Canonicalization:BrandAliases:0:DisplayName"] = "Marks",
             ["Canonicalization:BrandAliases:0:Aliases:0"] = "mark's"
         });
 
@@ -28,6 +29,7 @@ public sealed class BrandCanonicalizationOptionsTests
         BrandAliasDefinition definition = Assert.Single(
             options.BrandAliases);
         Assert.Equal("marks", definition.BrandKey);
+        Assert.Equal("Marks", definition.DisplayName);
         Assert.Equal(["mark's"], definition.Aliases);
     }
 
@@ -37,8 +39,10 @@ public sealed class BrandCanonicalizationOptionsTests
         IConfiguration configuration = BuildConfiguration(new()
         {
             ["Canonicalization:BrandAliases:0:BrandKey"] = "marks",
+            ["Canonicalization:BrandAliases:0:DisplayName"] = "Marks",
             ["Canonicalization:BrandAliases:0:Aliases:0"] = "mark's",
             ["Canonicalization:BrandAliases:1:BrandKey"] = "MARKS",
+            ["Canonicalization:BrandAliases:1:DisplayName"] = "Marks",
             ["Canonicalization:BrandAliases:1:Aliases:0"] = "marks brand"
         });
 
