@@ -35,30 +35,7 @@ k6 -> isolated test deployment and database
 
 Do not add a queue or dedicated worker merely to complete this plan. Introduce one later if ingestion needs scheduling, retries, or separate scaling.
 
-## Step 1 - Establish a reproducible baseline
-
-**Learn:** what the app requires to build, start, and serve a request.
-
-- Record `dotnet --info`, then run `dotnet restore`, `dotnet build`, and `dotnet test` from the repository root.
-- Run the API against a disposable local PostgreSQL database. Exercise at least one read endpoint and one write endpoint; record current behavior and test count.
-- Inventory configuration, external services, startup side effects, files written at runtime, and endpoints that must not be publicly writable.
-- Decide what data is disposable and what must be backed up before later migrations.
-
-**Checkpoint:** A fresh local checkout can be built/tested, and its dependencies and startup side effects are documented.
-
-## Step 2 - Secure configuration and public access
-
-**Learn:** configuration precedence, secrets, and the difference between public reads and public writes.
-
-- Rotate the PostgreSQL password currently present in `CartCompareAPI/appsettings.json`. Remove the credential from tracked configuration; use a local ignored file, user secrets, or environment variables for development. Check whether the old credential is present in Git history and assume it was exposed if the repository was shared. Do not rewrite shared Git history without coordinating with collaborators.
-- Supply the production connection string through the hosting platform's secret store as `ConnectionStrings__DefaultConnection`. Do not bake secrets into the image or workflow YAML.
-- Choose which endpoints may be public. Add authentication/authorization to mutating endpoints, or disable them in the public deployment until authentication is ready. Do not rely on CORS as access control.
-- Configure an explicit production CORS origin only if a browser frontend needs to call the API. Do not use an unrestricted origin by default.
-- Add basic request validation, safe error responses, and rate limiting for exposed endpoints.
-
-**Checkpoint:** No live credential is tracked; anonymous users cannot create, edit, delete, or trigger browser ingestion unless intentionally authorized.
-
-## Step 3 - Rebuild ingestion incrementally
+## Step 1 - Rebuild ingestion incrementally
 
 **Learn:** method contracts, dependency injection, orchestration, transaction boundaries, HTTP errors, authorization, cancellation, and container-safe browser automation.
 
@@ -74,7 +51,7 @@ authorized POST request
 
 Complete and test each substep separately. Do not implement the whole pipeline in one change.
 
-### 3.1 Record current behavior
+### 1.1 Record current behavior
 
 - Run the full tests and record the passing count.
 - Call the current ingestion endpoint once in a disposable environment.
@@ -83,7 +60,7 @@ Complete and test each substep separately. Do not implement the whole pipeline i
 
 **Checkpoint:** You can explain the existing flow and identify every file involved without changing code.
 
-### 3.2 Make Playwright return products in memory
+### 1.2 Make Playwright return products in memory
 
 - Change the browser method return type from `Task` to
   `Task<IReadOnlyCollection<ShwapnoProduct>>`.
@@ -96,7 +73,7 @@ Complete and test each substep separately. Do not implement the whole pipeline i
 
 **Checkpoint:** Calling the browser method returns products, creates no runtime JSON file, and gives a clear error if no product response was captured.
 
-### 3.3 Learn and test headless behavior
+### 1.3 Learn and test headless behavior
 
 - Add `Ingestion:Headless` configuration and read it in the browser client.
 - Use visible mode locally first so you can observe location dialogs, bot challenges, or consent pages.
@@ -105,7 +82,7 @@ Complete and test each substep separately. Do not implement the whole pipeline i
 
 **Checkpoint:** Both browser modes are intentional and a failed scrape explains whether navigation failed, no API response appeared, or collection stopped early.
 
-### 3.4 Change the importer to accept the collection
+### 1.4 Change the importer to accept the collection
 
 - Change `ShwapnoDairyImporter.ImportAsync` to accept the returned
   `IReadOnlyCollection<ShwapnoProduct>` plus a cancellation token.
@@ -117,7 +94,7 @@ Complete and test each substep separately. Do not implement the whole pipeline i
 
 **Checkpoint:** The importer test proves an in-memory product becomes an unlinked `StoreProduct` and initial `PriceHistory` without reading a file.
 
-### 3.5 Return an import summary
+### 1.5 Return an import summary
 
 - Add a small immutable result such as `ShwapnoImportSummary` with `Received`, `Created`, and `Updated` counts.
 - Count each outcome in the importer and return the summary only after the transaction commits.
@@ -125,7 +102,7 @@ Complete and test each substep separately. Do not implement the whole pipeline i
 
 **Checkpoint:** The caller can tell what the importer committed without querying the database again.
 
-### 3.6 Finish the batch canonicalization service
+### 1.6 Finish the batch canonicalization service
 
 - Complete `StoreProductCanonicalizationService`, which is currently a stub.
 - Give it enough context to select the imported store and category.
@@ -136,7 +113,7 @@ Complete and test each substep separately. Do not implement the whole pipeline i
 
 **Checkpoint:** A direct service test canonicalizes pending listings and returns accurate counts.
 
-### 3.7 Add the orchestration service without using the controller yet
+### 1.7 Add the orchestration service without using the controller yet
 
 - Create `ShwapnoIngestionOrchestrator` with one `IngestAsync` method.
 - It must execute exactly: scrape -> import and commit -> canonicalize.
@@ -150,7 +127,7 @@ Complete and test each substep separately. Do not implement the whole pipeline i
 
 **Checkpoint:** The orchestrator tests prove call order and failure behavior without launching a browser or using a real database.
 
-### 3.8 Remove ingestion from application startup
+### 1.8 Remove ingestion from application startup
 
 - Remove JSON import and canonicalization from `DatabaseInitialization`.
 - For now, leave migrations and idempotent reference/brand initialization if needed locally; plan to make migrations a deployment job before scaling to multiple replicas.
@@ -158,7 +135,7 @@ Complete and test each substep separately. Do not implement the whole pipeline i
 
 **Checkpoint:** API startup is quick and repeatable and has no ingestion side effects.
 
-### 3.9 Connect a minimal POST endpoint
+### 1.9 Connect a minimal POST endpoint
 
 - Change the ingestion action from `GET` to `POST` because it changes state.
 - Inject the orchestrator, call `IngestAsync`, and return `Ok(result)`.
@@ -167,7 +144,7 @@ Complete and test each substep separately. Do not implement the whole pipeline i
 
 **Checkpoint:** One POST call produces the three summaries and the database changes occur in the intended order.
 
-### 3.10 Add specific validation errors
+### 1.10 Add specific validation errors
 
 - Introduce narrow exceptions or result types for conditions callers can correct, for example unsupported category and invalid scraped input.
 - Avoid a broad `catch (ArgumentException)` that labels every lower-level validation failure as a category problem.
@@ -176,7 +153,7 @@ Complete and test each substep separately. Do not implement the whole pipeline i
 
 **Checkpoint:** Deliberately cause each error and verify its status, response body, log entry, and trace ID.
 
-### 3.11 Extract exception handling from the controller
+### 1.11 Extract exception handling from the controller
 
 - After the mappings work, create a specifically named
   `ShwapnoIngestionExceptionHandler` implementing `IExceptionHandler`.
@@ -187,7 +164,7 @@ Complete and test each substep separately. Do not implement the whole pipeline i
 
 **Checkpoint:** The controller contains the success path while the same error responses still work centrally.
 
-### 3.12 Authorize the ingestion endpoint
+### 1.12 Authorize the ingestion endpoint
 
 - Begin with a long random API key supplied through `Ingestion__ApiKey`, never a committed value.
 - Read the caller's `X-Ingestion-Key` request header and compare it with
@@ -198,7 +175,7 @@ Complete and test each substep separately. Do not implement the whole pipeline i
 
 **Checkpoint:** Missing configuration disables ingestion, a wrong key cannot call the orchestrator, and a correct key can.
 
-### 3.13 Prevent overlapping ingestion
+### 1.13 Prevent overlapping ingestion
 
 - Add a concurrency guard for one process and return `409 Conflict` when an ingestion is already running.
 - Use `try/finally` so the guard is always released.
@@ -207,7 +184,7 @@ Complete and test each substep separately. Do not implement the whole pipeline i
 
 **Checkpoint:** Two simultaneous requests cannot start two browser/import workflows in one process.
 
-### 3.14 Decide how canonicalization failure is reported
+### 1.14 Decide how canonicalization failure is reported
 
 - Preserve the committed import if canonicalization fails; do not pretend one transaction covers both phases.
 - Choose and document one API contract: either return a partial-success result with canonicalization failure details, or return an error plus a job/run ID that allows inspection and retry.
@@ -216,7 +193,7 @@ Complete and test each substep separately. Do not implement the whole pipeline i
 
 **Checkpoint:** A canonicalization failure never erases a successful import and the caller can see exactly which phase failed.
 
-### 3.15 Decide when the HTTP request is too long
+### 1.15 Decide when the HTTP request is too long
 
 - Measure real scrape/import/canonicalization duration.
 - Keep synchronous `200 OK` only while it reliably fits client and hosting timeouts.
@@ -225,9 +202,32 @@ Complete and test each substep separately. Do not implement the whole pipeline i
 
 **Checkpoint:** The chosen synchronous or background contract accurately describes when work is complete.
 
-### Step 3 completion checkpoint
+### Step 1 completion checkpoint
 
 Starting or restarting the API performs no ingestion or canonicalization. One authorized POST request passes Playwright results directly in memory, commits the import, then canonicalizes pending listings. Tests cover ordering, cancellation, validation, concurrency, and phase failure behavior.
+
+## Step 2 - Establish a reproducible deployment baseline
+
+**Learn:** what the app requires to build, start, and serve a request after the ingestion refactor.
+
+- Record `dotnet --info`, then run `dotnet restore`, `dotnet build`, and `dotnet test` from the repository root.
+- Run the API against a disposable local PostgreSQL database. Exercise at least one read endpoint, one write endpoint, and the ingestion endpoint; record current behavior and test count.
+- Inventory configuration, external services, startup side effects, files written at runtime, and endpoints that must not be publicly writable.
+- Decide what data is disposable and what must be backed up before later migrations.
+
+**Checkpoint:** A fresh local checkout can be built/tested, and its dependencies and startup behavior are documented.
+
+## Step 3 - Secure configuration and public access
+
+**Learn:** configuration precedence, secrets, and the difference between public reads and public writes.
+
+- Rotate the PostgreSQL password currently present in `CartCompareAPI/appsettings.json`. Remove the credential from tracked configuration; use a local ignored file, user secrets, or environment variables for development. Check whether the old credential is present in Git history and assume it was exposed if the repository was shared. Do not rewrite shared Git history without coordinating with collaborators.
+- Supply the production connection string through the hosting platform's secret store as `ConnectionStrings__DefaultConnection`. Do not bake secrets into the image or workflow YAML.
+- Choose which endpoints may be public. Add authentication/authorization to mutating endpoints, or disable them in the public deployment until authentication is ready. Do not rely on CORS as access control.
+- Configure an explicit production CORS origin only if a browser frontend needs to call the API. Do not use an unrestricted origin by default.
+- Add basic request validation, safe error responses, and rate limiting for exposed endpoints.
+
+**Checkpoint:** No live credential is tracked; anonymous users cannot create, edit, delete, or trigger browser ingestion unless intentionally authorized.
 
 ## Step 4 - Add health checks and production-safe logging
 
