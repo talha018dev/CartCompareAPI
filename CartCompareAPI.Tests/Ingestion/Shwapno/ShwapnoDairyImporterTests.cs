@@ -38,12 +38,15 @@ public sealed class ShwapnoDairyImporterTests
         await using var db = CreateContext();
         var importer = CreateImporter(db);
 
-        var summary = await importer.ImportAsync(categorySlug, new[] { source });
+        var result = await importer.ImportAsync(categorySlug, new[] { source });
 
-        Assert.Equal(new ShwapnoImportSummary(1, 1, 0), summary);
+        Assert.Equal(new ShwapnoImportSummary(1, 1, 0), result.Summary);
 
         var category = await db.Categories.SingleAsync();
+        var store = await db.Stores.SingleAsync();
         Assert.Equal(categorySlug, category.Slug);
+        Assert.Equal(category.Id, result.CategoryId);
+        Assert.Equal(store.Id, result.StoreId);
 
         var listing = await db.StoreProducts
             .Include(product => product.SourceCategory)
@@ -137,14 +140,16 @@ public sealed class ShwapnoDairyImporterTests
         var fruitProduct = ValidProduct();
         fruitProduct.Sku = "SKU-2";
 
-        await importer.ImportAsync("dairy", new[] { dairyProduct });
-        await importer.ImportAsync("fresh-fruits", new[] { fruitProduct });
+        var dairyResult = await importer.ImportAsync("dairy", new[] { dairyProduct });
+        var fruitResult = await importer.ImportAsync("fresh-fruits", new[] { fruitProduct });
 
         Assert.Equal(
             new[] { "dairy", "fresh-fruits" },
             await db.Categories.OrderBy(category => category.Slug)
                 .Select(category => category.Slug).ToArrayAsync());
         Assert.Single(await db.Stores.ToListAsync());
+        Assert.Equal(dairyResult.StoreId, fruitResult.StoreId);
+        Assert.NotEqual(dairyResult.CategoryId, fruitResult.CategoryId);
         Assert.Equal(2, await db.StoreProducts.CountAsync());
     }
 
@@ -155,12 +160,14 @@ public sealed class ShwapnoDairyImporterTests
         var importer = CreateImporter(db);
 
         await importer.ImportAsync("dairy", new[] { ValidProduct() });
-        var summary = await importer.ImportAsync("fresh-fruits", new[] { ValidProduct() });
+        var result = await importer.ImportAsync("fresh-fruits", new[] { ValidProduct() });
 
         var listing = await db.StoreProducts
             .Include(product => product.SourceCategory)
             .SingleAsync();
-        Assert.Equal(new ShwapnoImportSummary(1, 0, 1), summary);
+        Assert.Equal(new ShwapnoImportSummary(1, 0, 1), result.Summary);
+        Assert.Equal("fresh-fruits", (await db.Categories.SingleAsync(
+            category => category.Id == result.CategoryId)).Slug);
         Assert.Equal("dairy", listing.SourceCategory?.Slug);
         Assert.Single(await db.StoreProducts.ToListAsync());
     }
@@ -174,9 +181,9 @@ public sealed class ShwapnoDairyImporterTests
 
         var updatedProduct = ValidProduct();
         updatedProduct.Price.PriceValue = 110m;
-        var summary = await importer.ImportAsync("dairy", new[] { updatedProduct });
+        var result = await importer.ImportAsync("dairy", new[] { updatedProduct });
 
-        Assert.Equal(new ShwapnoImportSummary(1, 0, 1), summary);
+        Assert.Equal(new ShwapnoImportSummary(1, 0, 1), result.Summary);
         var listing = await db.StoreProducts
             .Include(product => product.PriceHistory)
             .SingleAsync();
@@ -193,10 +200,10 @@ public sealed class ShwapnoDairyImporterTests
 
         var newProduct = ValidProduct();
         newProduct.Sku = "SKU-2";
-        var summary = await importer.ImportAsync(
+        var result = await importer.ImportAsync(
             "fresh-fruits", new[] { ValidProduct(), newProduct });
 
-        Assert.Equal(new ShwapnoImportSummary(2, 1, 1), summary);
+        Assert.Equal(new ShwapnoImportSummary(2, 1, 1), result.Summary);
         Assert.Equal(2, await db.StoreProducts.CountAsync());
     }
 

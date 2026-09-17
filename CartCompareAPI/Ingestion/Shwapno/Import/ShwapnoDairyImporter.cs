@@ -14,7 +14,7 @@ public sealed class ShwapnoDairyImporter(
     )
 {
 
-    public async Task<ShwapnoImportSummary> ImportAsync(
+    public async Task<ShwapnoImportResult> ImportAsync(
         string categorySlug,
         IReadOnlyCollection<ShwapnoProduct> sourceProducts,
         CancellationToken cancellationToken = default
@@ -84,10 +84,12 @@ public sealed class ShwapnoDairyImporter(
         await db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 
-        return new ShwapnoImportSummary(
+        var summary = new ShwapnoImportSummary(
             Received: sourceProducts.Count,
             Created: createdProductCount,
             Updated: updatedProductCount
         );
+
+        return new ShwapnoImportResult(summary, store.Id, catalog.Category.Id);
     }
 }
