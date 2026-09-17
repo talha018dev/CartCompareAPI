@@ -14,7 +14,7 @@ public sealed class ShwapnoDairyImporter(
     )
 {
 
-    public async Task ImportAsync(
+    public async Task<ShwapnoImportSummary> ImportAsync(
         string categorySlug,
         IReadOnlyCollection<ShwapnoProduct> sourceProducts,
         CancellationToken cancellationToken = default
@@ -35,6 +35,9 @@ public sealed class ShwapnoDairyImporter(
         {
             throw new ArgumentException("At least one product is required.", nameof(sourceProducts));
         }
+
+        var createdProductCount = 0;
+        var updatedProductCount = 0;
 
         foreach (ShwapnoProduct? source in sourceProducts)
         {
@@ -64,6 +67,7 @@ public sealed class ShwapnoDairyImporter(
             if (existingStoreProducts.TryGetValue(source.Sku, out StoreProduct? storeProduct))
             {
                 productMapper.Update(storeProduct, source, now);
+                updatedProductCount++;
                 continue;
             }
 
@@ -73,9 +77,16 @@ public sealed class ShwapnoDairyImporter(
                 now
             );
             db.StoreProducts.Add(newStoreProduct);
+            createdProductCount++;
         }
 
         await db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
+
+        return new ShwapnoImportSummary(
+            Received: sourceProducts.Count,
+            Created: createdProductCount,
+            Updated: updatedProductCount
+        );
     }
 }

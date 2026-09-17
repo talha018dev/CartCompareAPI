@@ -38,7 +38,9 @@ public sealed class ShwapnoDairyImporterTests
         await using var db = CreateContext();
         var importer = CreateImporter(db);
 
-        await importer.ImportAsync(categorySlug, new[] { source });
+        var summary = await importer.ImportAsync(categorySlug, new[] { source });
+
+        Assert.Equal(new ShwapnoImportSummary(1, 1, 0), summary);
 
         var category = await db.Categories.SingleAsync();
         Assert.Equal(categorySlug, category.Slug);
@@ -140,6 +142,41 @@ public sealed class ShwapnoDairyImporterTests
             await db.Categories.OrderBy(category => category.Slug)
                 .Select(category => category.Slug).ToArrayAsync());
         Assert.Single(await db.Stores.ToListAsync());
+        Assert.Equal(2, await db.StoreProducts.CountAsync());
+    }
+
+    [Fact]
+    public async Task ImportAsync_ShouldCountExistingSkuAsUpdated()
+    {
+        await using var db = CreateContext();
+        var importer = CreateImporter(db);
+        await importer.ImportAsync("dairy", new[] { ValidProduct() });
+
+        var updatedProduct = ValidProduct();
+        updatedProduct.Price.PriceValue = 110m;
+        var summary = await importer.ImportAsync("dairy", new[] { updatedProduct });
+
+        Assert.Equal(new ShwapnoImportSummary(1, 0, 1), summary);
+        var listing = await db.StoreProducts
+            .Include(product => product.PriceHistory)
+            .SingleAsync();
+        Assert.Equal(110m, listing.Price);
+        Assert.Equal(2, listing.PriceHistory.Count);
+    }
+
+    [Fact]
+    public async Task ImportAsync_ShouldCountNewAndExistingSkusInOneBatch()
+    {
+        await using var db = CreateContext();
+        var importer = CreateImporter(db);
+        await importer.ImportAsync("fresh-fruits", new[] { ValidProduct() });
+
+        var newProduct = ValidProduct();
+        newProduct.Sku = "SKU-2";
+        var summary = await importer.ImportAsync(
+            "fresh-fruits", new[] { ValidProduct(), newProduct });
+
+        Assert.Equal(new ShwapnoImportSummary(2, 1, 1), summary);
         Assert.Equal(2, await db.StoreProducts.CountAsync());
     }
 
