@@ -46,10 +46,13 @@ public sealed class ShwapnoDairyImporterTests
         Assert.Equal(categorySlug, category.Slug);
 
         var listing = await db.StoreProducts
+            .Include(product => product.SourceCategory)
             .Include(product => product.PriceHistory)
             .SingleAsync();
 
         Assert.Null(listing.ProductId);
+        Assert.Equal(category.Id, listing.SourceCategoryId);
+        Assert.Equal(categorySlug, listing.SourceCategory?.Slug);
         Assert.Single(listing.PriceHistory);
         Assert.Empty(await db.Products.ToListAsync());
     }
@@ -143,6 +146,23 @@ public sealed class ShwapnoDairyImporterTests
                 .Select(category => category.Slug).ToArrayAsync());
         Assert.Single(await db.Stores.ToListAsync());
         Assert.Equal(2, await db.StoreProducts.CountAsync());
+    }
+
+    [Fact]
+    public async Task ImportAsync_ShouldKeepFirstSourceCategoryWhenSkuAppearsElsewhere()
+    {
+        await using var db = CreateContext();
+        var importer = CreateImporter(db);
+
+        await importer.ImportAsync("dairy", new[] { ValidProduct() });
+        var summary = await importer.ImportAsync("fresh-fruits", new[] { ValidProduct() });
+
+        var listing = await db.StoreProducts
+            .Include(product => product.SourceCategory)
+            .SingleAsync();
+        Assert.Equal(new ShwapnoImportSummary(1, 0, 1), summary);
+        Assert.Equal("dairy", listing.SourceCategory?.Slug);
+        Assert.Single(await db.StoreProducts.ToListAsync());
     }
 
     [Fact]

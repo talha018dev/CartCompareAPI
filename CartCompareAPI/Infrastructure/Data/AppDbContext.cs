@@ -27,6 +27,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             .HasForeignKey(x => x.ProductId)
             .IsRequired(false);
 
+        modelBuilder.Entity<StoreProduct>()
+            .HasOne(x => x.SourceCategory)
+            .WithMany()
+            .HasForeignKey(x => x.SourceCategoryId)
+            .IsRequired(false);
+
         modelBuilder.Entity<Product>()
             .HasIndex(x => x.CanonicalKey)
             .IsUnique();

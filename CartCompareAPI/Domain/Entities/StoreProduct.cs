@@ -8,6 +8,10 @@ public class StoreProduct
     public Guid StoreId { get; set; }
     public Guid? ProductId { get; set; }
 
+    public Guid? SourceCategoryId { get; set; }
+    
+    public Category? SourceCategory { get; set; }
+
     public string ExternalProductId { get; set; } = string.Empty;
     public string StoreProductName { get; set; } = string.Empty;
 

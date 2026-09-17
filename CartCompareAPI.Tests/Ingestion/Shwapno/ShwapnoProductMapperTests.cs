@@ -13,13 +13,16 @@ public sealed class ShwapnoProductMapperTests
     {
         var now = new DateTime(2026, 9, 5, 12, 30, 0, DateTimeKind.Utc);
         var store = new Store { Id = Guid.NewGuid(), Name = "Shwapno", Slug = "shwapno" };
+        var category = new Category { Id = Guid.NewGuid(), Name = "Dairy", Slug = "dairy" };
         var source = CreateSource();
 
-        StoreProduct result = mapper.Create(source, store, now);
+        StoreProduct result = mapper.Create(source, store, category, now);
 
         Assert.Null(result.ProductId);
         Assert.Null(result.Product);
         Assert.Equal(store.Id, result.StoreId);
+        Assert.Equal(category.Id, result.SourceCategoryId);
+        Assert.Same(category, result.SourceCategory);
         Assert.Equal(source.Sku, result.ExternalProductId);
         Assert.Equal(source.Name, result.StoreProductName);
         Assert.Equal(source.Price.PriceValue, result.Price);

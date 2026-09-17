@@ -36,8 +36,8 @@ public sealed class ShwapnoDairyImporter(
             throw new ArgumentException("At least one product is required.", nameof(sourceProducts));
         }
 
-        var createdProductCount = 0;
-        var updatedProductCount = 0;
+        int createdProductCount = 0;
+        int updatedProductCount = 0;
 
         foreach (ShwapnoProduct? source in sourceProducts)
         {
@@ -74,6 +74,7 @@ public sealed class ShwapnoDairyImporter(
             StoreProduct newStoreProduct = productMapper.Create(
                 source,
                 store,
+                catalog.Category,
                 now
             );
             db.StoreProducts.Add(newStoreProduct);

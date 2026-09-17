@@ -36,7 +36,7 @@ public sealed class ShwapnoProductMapper
         }
     }
 
-    public StoreProduct Create(ShwapnoProduct source, Store store, DateTime now)
+    public StoreProduct Create(ShwapnoProduct source, Store store, Category category, DateTime now)
     {
         var storeProduct = new StoreProduct
         {
@@ -50,7 +50,9 @@ public sealed class ShwapnoProductMapper
             ProductUrl = GetProductUrl(source),
             ImageUrl = GetImageUrl(source),
             LastUpdated = now,
-            CreatedAt = now
+            CreatedAt = now,
+            SourceCategoryId = category.Id,
+            SourceCategory = category
         };
 
         storeProduct.PriceHistory.Add(new PriceHistory
