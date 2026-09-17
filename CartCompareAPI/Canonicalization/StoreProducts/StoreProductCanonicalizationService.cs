@@ -1,5 +1,5 @@
-using System;
 using CartCompareAPI.Canonicalization.Brands;
+using CartCompareAPI.Domain.Entities;
 using CartCompareAPI.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,27 +11,59 @@ public class StoreProductCanonicalizationService(AppDbContext db,
     : IStoreProductCanonicalizationService
 {
     public async Task<StoreProductCanonicalizationSummary> CanonicalizePendingAsync(
-        Guid storeId, 
+        Guid storeId,
         Guid categoryId,
         CancellationToken cancellationToken = default)
     {
+        Category category = await db.Categories.SingleAsync(
+            category => category.Id == categoryId, cancellationToken);
 
-        // 1. Load unresolved StoreProducts.
-        // 2. Load brand definitions.
-        // 3. Call canonicalizer for each listing.
-        // 4. Save the batch here.
+        List<StoreProduct> storeProducts = await db.StoreProducts
+            .Where(p => p.StoreId == storeId && p.SourceCategoryId == categoryId && p.ProductId == null)
+            .OrderBy(p => p.ExternalProductId)
+            .ToListAsync(cancellationToken);
 
-        try
+        BrandDefinition[] brandDefinitions = (await brandDefinitionProvider
+            .GetAllAsync(cancellationToken))
+            .ToArray();
+
+        int matched = 0;
+        int created = 0;
+        int unresolved = 0;
+
+        foreach (StoreProduct storeProduct in storeProducts)
         {
-            await db.SaveChangesAsync(cancellationToken);
-        }
-        catch (DbUpdateException exception)
-        // when (IsCanonicalKeyViolation(exception))
-        {
-            // Recover from the race.
+            cancellationToken.ThrowIfCancellationRequested();
+
+            StoreProductCanonicalizationResult result = await canonicalizer.CanonicalizeAsync(storeProduct, category, brandDefinitions, cancellationToken);
+
+            switch (result.Outcome)
+            {
+                case StoreProductCanonicalizationOutcome.Matched:
+                    matched++;
+                    break;
+
+                case StoreProductCanonicalizationOutcome.Created:
+                    created++;
+                    // The next listing must be able to find this product in the database.
+                    await db.SaveChangesAsync(cancellationToken);
+                    break;
+
+                case StoreProductCanonicalizationOutcome.Unresolved:
+                    unresolved++;
+                    break;
+
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
         }
 
-        // 5. Return summary.
-        throw new NotImplementedException();
+        await db.SaveChangesAsync(cancellationToken);
+
+        return new StoreProductCanonicalizationSummary(
+            Matched: matched,
+            Created: created,
+            Unresolved: unresolved,
+            Failed: 0);
     }
 }
