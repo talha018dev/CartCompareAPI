@@ -9,10 +9,24 @@ public sealed class ShwapnoIngestionOrchestrator(
     IShwapnoProductImporter importer,
     IStoreProductCanonicalizationService canonicalizationService)
 {
-    public Task<ShwapnoIngestionResult> IngestAsync(
+    public async Task<ShwapnoIngestionResult> IngestAsync(
         string categorySlug,
         CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        var products = await productSource.GetProductsFromShwapno(
+        categorySlug, cancellationToken);
+
+        var importResult = await importer.ImportAsync(
+            categorySlug, products, cancellationToken);
+
+        var canonicalization = await canonicalizationService.CanonicalizePendingAsync(
+            importResult.StoreId,
+            importResult.CategoryId,
+            cancellationToken);
+
+        return new ShwapnoIngestionResult(
+            new ShwapnoScrapeSummary(products.Count),
+            importResult.Summary,
+            canonicalization);
     }
 }

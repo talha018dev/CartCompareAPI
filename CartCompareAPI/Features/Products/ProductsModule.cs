@@ -6,6 +6,8 @@ using CartCompareAPI.Features.Products.EditProduct;
 using CartCompareAPI.Features.Products.GetProductById;
 using CartCompareAPI.Features.Products.GetProducts;
 using CartCompareAPI.Features.Stores;
+using CartCompareAPI.Ingestion.Shwapno;
+using CartCompareAPI.Ingestion.Shwapno.Browser;
 using CartCompareAPI.Ingestion.Shwapno.Import;
 
 namespace CartCompareAPI.Features.Products;
@@ -17,6 +19,11 @@ public static class ProductsModule
         services.AddScoped<ShwapnoCatalogInitializer>();
         services.AddScoped<ShwapnoProductMapper>();
         services.AddScoped<ShwapnoJsonReader>();
+        services.AddScoped<IShwapnoProductSource>(provider =>
+            provider.GetRequiredService<ShwapnoBrowserClient>());
+        services.AddScoped<IShwapnoProductImporter>(provider =>
+            provider.GetRequiredService<ShwapnoDairyImporter>());
+        services.AddScoped<ShwapnoIngestionOrchestrator>();
         return services;
     }
     public static IServiceCollection AddProductFeatures(this IServiceCollection services)
