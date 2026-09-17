@@ -2,6 +2,7 @@ using CartCompareAPI.Canonicalization.Brands;
 using CartCompareAPI.Canonicalization.StoreProducts;
 using CartCompareAPI.Domain.Entities;
 using CartCompareAPI.Ingestion.Shwapno;
+using CartCompareAPI.Ingestion.Shwapno.Import;
 using Microsoft.EntityFrameworkCore;
 
 namespace CartCompareAPI.Infrastructure.Data;
@@ -24,7 +25,9 @@ public static class DatabaseInitialization
         var importer =
             scope.ServiceProvider.GetRequiredService<ShwapnoDairyImporter>();
 
-        await importer.ImportAsync();
+        var jsonReader = scope.ServiceProvider.GetRequiredService<ShwapnoJsonReader>();
+        var sourceProducts = await jsonReader.ReadProductsAsync();
+        await importer.ImportAsync("dairy", sourceProducts);
 
         var brandDefinitionProvider =
             scope.ServiceProvider.GetRequiredService<IBrandDefinitionProvider>();

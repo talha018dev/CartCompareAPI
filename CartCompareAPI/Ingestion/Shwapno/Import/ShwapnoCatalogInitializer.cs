@@ -8,14 +8,19 @@ namespace CartCompareAPI.Ingestion.Shwapno.Import;
 public class ShwapnoCatalogInitializer(AppDbContext db)
 {
 
-    public async Task<ShwapnoCatalog> ShwapnoCatalogInitializedAsync()
+    public async Task<ShwapnoCatalog> ShwapnoCatalogInitializedAsync(string categorySlug,
+    CancellationToken cancellationToken = default)
     {
-        var category = await db.Categories.SingleOrDefaultAsync(x => x.Slug == "dairy", cancellationToken: default);
-        var store = await db.Stores.SingleOrDefaultAsync(x => x.Slug == "shwapno", cancellationToken: default);
+        var category = await db.Categories.SingleOrDefaultAsync(x => x.Slug == categorySlug, cancellationToken);
+        var store = await db.Stores.SingleOrDefaultAsync(x => x.Slug == "shwapno", cancellationToken);
 
         if (category is null)
         {
-            category = new Category { Name = "Dairy", Slug = "dairy" };
+            category = new Category
+            {
+                Name = categorySlug.Replace('-', ' '),
+                Slug = categorySlug
+            };
             db.Categories.Add(category);
         }
         if (store is null)
@@ -25,7 +30,7 @@ public class ShwapnoCatalogInitializer(AppDbContext db)
         }
 
 
-        await db.SaveChangesAsync(cancellationToken: default);
+        await db.SaveChangesAsync(cancellationToken);
 
         return new ShwapnoCatalog(category, store);
     }
