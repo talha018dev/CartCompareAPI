@@ -4,7 +4,7 @@ using Microsoft.Playwright;
 
 namespace CartCompareAPI.Ingestion.Shwapno.Browser;
 
-public class ShwapnoBrowserClient(IConfiguration configuration)
+public class ShwapnoBrowserClient(IConfiguration configuration) : IShwapnoProductSource
 {
     public async Task<IReadOnlyCollection<ShwapnoProduct>> GetProductsFromShwapno(
         string category,

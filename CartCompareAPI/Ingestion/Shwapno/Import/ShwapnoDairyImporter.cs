@@ -11,7 +11,7 @@ public sealed class ShwapnoDairyImporter(
         AppDbContext db,
         ShwapnoCatalogInitializer catalogInitializer,
         ShwapnoProductMapper productMapper
-    )
+    ) : IShwapnoProductImporter
 {
 
     public async Task<ShwapnoImportResult> ImportAsync(
