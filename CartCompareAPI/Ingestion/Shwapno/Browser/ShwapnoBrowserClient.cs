@@ -4,10 +4,14 @@ using Microsoft.Playwright;
 
 namespace CartCompareAPI.Ingestion.Shwapno.Browser;
 
-public class ShwapnoBrowserClient(IWebHostEnvironment _environment)
+public class ShwapnoBrowserClient(IConfiguration configuration)
 {
-    public async Task GetProductsFromShwapno(string category)
+    public async Task<IReadOnlyCollection<ShwapnoProduct>> GetProductsFromShwapno(
+        string category,
+        CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         var categorySlug = category.Trim().ToLowerInvariant();
 
         if (string.IsNullOrWhiteSpace(categorySlug) ||
@@ -20,148 +24,146 @@ public class ShwapnoBrowserClient(IWebHostEnvironment _environment)
 
         using var playwright = await Playwright.CreateAsync();
 
+        cancellationToken.ThrowIfCancellationRequested();
         await using var browser = await playwright.Chromium.LaunchAsync(
-            new BrowserTypeLaunchOptions
-            {
-                Headless = false
-            });
+            new BrowserTypeLaunchOptions { Headless = configuration.GetValue<bool>("Ingestion:Headless") });
 
         var page = await browser.NewPageAsync();
-
         var allProducts = new Dictionary<string, ShwapnoProduct>();
-
+        var responseTasks = new List<Task>();
+        var responseLock = new object();
         var hasNextPage = true;
-        var totalItems = int.MaxValue;
-
-        var previousCount = 0;
+        int? totalItems = null;
+        var productResponseCount = 0;
         var stalledScrolls = 0;
 
-        page.Response += async (_, response) =>
+        void OnResponse(object? sender, IResponse response)
         {
-            if (!response.Url.Contains("/api/category/products"))
+            if (!response.Url.Contains("/api/category/products", StringComparison.OrdinalIgnoreCase))
                 return;
 
+            lock (responseLock)
+            {
+                responseTasks.Add(ProcessProductResponseAsync(response));
+            }
+        }
+
+        async Task ProcessProductResponseAsync(IResponse response)
+        {
             try
             {
                 var json = await response.TextAsync();
-
-                var result =
-                    JsonSerializer.Deserialize<ShwapnoProductResponse>(
-                        json,
-                        new JsonSerializerOptions
-                        {
-                            PropertyNameCaseInsensitive = true
-                        });
+                var result = JsonSerializer.Deserialize<ShwapnoProductResponse>(
+                    json,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
                 if (result?.Products == null)
                     return;
 
-                totalItems = result.TotalItems;
-                hasNextPage = result.HasNextPage;
-
-                foreach (var product in result.Products)
+                lock (responseLock)
                 {
-                    if (!string.IsNullOrWhiteSpace(product.Sku))
-                    {
-                        allProducts[product.Sku] = product;
-                    }
-                }
+                    totalItems = result.TotalItems;
+                    hasNextPage = result.HasNextPage;
+                    productResponseCount++;
 
-                Console.WriteLine(
-                    $"API response: {result.Products.Count} products | " +
-                    $"Total unique: {allProducts.Count}/{totalItems} | " +
-                    $"Has next page: {hasNextPage}");
+                    foreach (var product in result.Products)
+                    {
+                        if (!string.IsNullOrWhiteSpace(product.Sku))
+                            allProducts[product.Sku] = product;
+                    }
+
+                    Console.WriteLine(
+                        $"API response: {result.Products.Count} products | " +
+                        $"Total unique: {allProducts.Count}/{totalItems} | " +
+                        $"Has next page: {hasNextPage}");
+                }
             }
             catch (Exception ex)
             {
-                Console.WriteLine(
-                    $"Error processing product response: {ex.Message}");
+                Console.WriteLine($"Error processing product response: {ex.Message}");
             }
-        };
+        }
+
+        page.Response += OnResponse;
 
         Console.WriteLine($"Opening Shwapno {categorySlug} page...");
+        cancellationToken.ThrowIfCancellationRequested();
 
-        await page.GotoAsync(
-            $"https://www.shwapno.com/{categorySlug}",
-            new PageGotoOptions
-            {
-                WaitUntil = WaitUntilState.NetworkIdle
-            });
+        IResponse? navigationResponse;
 
-        // Give the initial API request time to complete.
-        await page.WaitForTimeoutAsync(2000);
-
-        while (hasNextPage && allProducts.Count < totalItems)
+        try
         {
-            previousCount = allProducts.Count;
+            navigationResponse = await page.GotoAsync(
+                $"https://www.shwapno.com/{categorySlug}",
+                new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
+        }
+        catch (PlaywrightException ex)
+        {
+            Console.WriteLine($"Navigation failed: {ex.Message}");
+            throw;
+        }
+
+        Console.WriteLine(
+            $"Navigation status: {navigationResponse?.Status.ToString() ?? "unknown"}");
+
+        // Allow the initial product request to finish before deciding whether to scroll.
+        await Task.Delay(2000, cancellationToken);
+
+        while (true)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            int previousCount;
+            lock (responseLock)
+            {
+                if (!hasNextPage || (totalItems is not null && allProducts.Count >= totalItems))
+                    break;
+
+                previousCount = allProducts.Count;
+            }
 
             await page.Mouse.WheelAsync(0, 3000);
+            await Task.Delay(2000, cancellationToken);
 
-            // Give Shwapno time to request and render the next products.
-            await page.WaitForTimeoutAsync(2000);
-
-            if (allProducts.Count == previousCount)
+            lock (responseLock)
             {
-                stalledScrolls++;
-
-                Console.WriteLine(
-                    $"No new products loaded. " +
-                    $"Stalled: {stalledScrolls}/3");
-            }
-            else
-            {
-                stalledScrolls = 0;
+                stalledScrolls = allProducts.Count == previousCount ? stalledScrolls + 1 : 0;
             }
 
-            // Safety mechanism in case the page stops loading products.
+            if (stalledScrolls > 0)
+                Console.WriteLine($"No new products loaded. Stalled: {stalledScrolls}/3");
+
             if (stalledScrolls >= 3)
             {
-                Console.WriteLine(
-                    "No new products loaded after 3 attempts. Stopping.");
-
+                Console.WriteLine("No new products loaded after 3 attempts. Stopping.");
                 break;
             }
         }
 
-        // Give the last response a little time to finish processing.
-        await page.WaitForTimeoutAsync(2000);
+        // Stop accepting new response tasks, then wait for every captured response.
+        await Task.Delay(2000, cancellationToken);
+        page.Response -= OnResponse;
 
-        Console.WriteLine();
-        Console.WriteLine("Finished collecting products.");
-        Console.WriteLine($"Products collected: {allProducts.Count}");
-        Console.WriteLine($"Expected products: {totalItems}");
+        Task[] pendingResponses;
+        lock (responseLock)
+        {
+            pendingResponses = responseTasks.ToArray();
+        }
 
-        // Convert dictionary to list.
-        var products = allProducts.Values.ToList();
+        await Task.WhenAll(pendingResponses).WaitAsync(cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
 
-        // Save JSON.
-        var outputPath = Path.Combine(
-            _environment.ContentRootPath,
-            "Ingestion",
-            "Shwapno",
-            "Data",
-            $"{categorySlug}.json"
-        );
+        lock (responseLock)
+        {
+            Console.WriteLine("Finished collecting products.");
+            Console.WriteLine($"Captured product API responses: {productResponseCount}");
+            Console.WriteLine($"Products collected: {allProducts.Count}");
+            Console.WriteLine($"Expected products: {totalItems?.ToString() ?? "unknown"}");
 
-        Directory.CreateDirectory(
-            Path.GetDirectoryName(outputPath)!);
+            if (productResponseCount == 0)
+                throw new InvalidOperationException("No Shwapno product API response was captured.");
 
-        var outputJson = JsonSerializer.Serialize(
-            products,
-            new JsonSerializerOptions
-            {
-                WriteIndented = true
-            });
-
-        await File.WriteAllTextAsync(
-            outputPath,
-            outputJson);
-
-        Console.WriteLine();
-        Console.WriteLine($"Saved {products.Count} products.");
-        Console.WriteLine($"File: {outputPath}");
-
-        // Keep browser open for a few seconds so you can see the result.
-        await page.WaitForTimeoutAsync(3000);
+            return allProducts.Values.ToArray();
+        }
     }
 }

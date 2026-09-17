@@ -14,10 +14,12 @@ public class ShwapnoController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> IngestShwapnoProducts([FromQuery] string category)
+    public async Task<IActionResult> IngestShwapnoProducts(
+        [FromQuery] string category,
+        CancellationToken cancellationToken)
     {
-        await _browser.GetProductsFromShwapno(category);
+        var products = await _browser.GetProductsFromShwapno(category, cancellationToken);
 
-        return Ok($"Shwapno {category} products ingested successfully.");
+        return Ok(new { Category = category, ProductsCollected = products.Count });
     }
 }
