@@ -23,7 +23,7 @@ public class StoreProductCanonicalizationService(AppDbContext db,
             await db.SaveChangesAsync(cancellationToken);
         }
         catch (DbUpdateException exception)
-            // when (IsCanonicalKeyViolation(exception))
+        // when (IsCanonicalKeyViolation(exception))
         {
             // Recover from the race.
         }

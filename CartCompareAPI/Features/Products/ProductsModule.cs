@@ -1,10 +1,10 @@
-using CartCompareAPI.Features.Products.GetProducts;
-using CartCompareAPI.Features.Products.GetProductById;
-using CartCompareAPI.Features.Products.CreateProduct;
-using CartCompareAPI.Features.Products.EditProduct;
-using CartCompareAPI.Features.Products.DeleteProduct;
 using CartCompareAPI.Features.Brands;
 using CartCompareAPI.Features.Categories;
+using CartCompareAPI.Features.Products.CreateProduct;
+using CartCompareAPI.Features.Products.DeleteProduct;
+using CartCompareAPI.Features.Products.EditProduct;
+using CartCompareAPI.Features.Products.GetProductById;
+using CartCompareAPI.Features.Products.GetProducts;
 using CartCompareAPI.Features.Stores;
 using CartCompareAPI.Ingestion.Shwapno.Import;
 

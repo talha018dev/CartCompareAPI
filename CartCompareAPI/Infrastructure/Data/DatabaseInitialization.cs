@@ -2,6 +2,7 @@ using CartCompareAPI.Canonicalization.Brands;
 using CartCompareAPI.Canonicalization.StoreProducts;
 using CartCompareAPI.Domain.Entities;
 using CartCompareAPI.Ingestion.Shwapno;
+using CartCompareAPI.Ingestion.Shwapno.Entities;
 using CartCompareAPI.Ingestion.Shwapno.Import;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,28 +12,28 @@ public static class DatabaseInitialization
 {
     public static async Task InitialiseDatabaseAsync(this WebApplication app)
     {
-        await using var scope = app.Services.CreateAsyncScope();
+        await using AsyncServiceScope scope = app.Services.CreateAsyncScope();
 
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        AppDbContext db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
         await db.Database.MigrateAsync();
 
-        var brandCatalogInitializer =
+        BrandCatalogInitializer brandCatalogInitializer =
             scope.ServiceProvider.GetRequiredService<BrandCatalogInitializer>();
 
         await brandCatalogInitializer.InitializeAsync();
 
-        var importer =
+        ShwapnoDairyImporter importer =
             scope.ServiceProvider.GetRequiredService<ShwapnoDairyImporter>();
 
-        var jsonReader = scope.ServiceProvider.GetRequiredService<ShwapnoJsonReader>();
-        var sourceProducts = await jsonReader.ReadProductsAsync();
+        ShwapnoJsonReader jsonReader = scope.ServiceProvider.GetRequiredService<ShwapnoJsonReader>();
+        List<ShwapnoProduct> sourceProducts = await jsonReader.ReadProductsAsync();
         await importer.ImportAsync("dairy", sourceProducts);
 
-        var brandDefinitionProvider =
+        IBrandDefinitionProvider brandDefinitionProvider =
             scope.ServiceProvider.GetRequiredService<IBrandDefinitionProvider>();
 
-        var canonicalizer =
+        IStoreProductCanonicalizer canonicalizer =
             scope.ServiceProvider.GetRequiredService<IStoreProductCanonicalizer>();
 
         Category category = await db.Categories.SingleAsync(

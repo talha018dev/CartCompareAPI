@@ -1,11 +1,11 @@
-using CartCompareAPI.Ingestion.Shwapno.Browser;
 using CartCompareAPI.Canonicalization;
 using CartCompareAPI.Features.Products;
 using CartCompareAPI.Infrastructure;
 using CartCompareAPI.Infrastructure.Data;
+using CartCompareAPI.Ingestion.Shwapno.Browser;
 using Scalar.AspNetCore;
 
-var builder = WebApplication.CreateBuilder(args);
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
@@ -19,7 +19,7 @@ builder.Services.AddCors(options =>
     {
         policy
             .SetIsOriginAllowed(origin =>
-                Uri.TryCreate(origin, UriKind.Absolute, out var uri) && uri.IsLoopback)
+                Uri.TryCreate(origin, UriKind.Absolute, out Uri? uri) && uri.IsLoopback)
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
@@ -28,7 +28,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddScoped<ShwapnoBrowserClient>();
 
 
-var app = builder.Build();
+WebApplication app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
@@ -50,4 +50,4 @@ app.UseAuthorization();
 app.MapProductEndpoints();
 app.MapControllers();
 
-app.Run(); 
+app.Run();

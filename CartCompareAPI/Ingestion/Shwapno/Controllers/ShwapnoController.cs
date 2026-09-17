@@ -1,3 +1,4 @@
+using CartCompareAPI.Ingestion.Shwapno.Entities;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CartCompareAPI.Ingestion.Shwapno.Browser;
@@ -18,7 +19,7 @@ public class ShwapnoController : ControllerBase
         [FromQuery] string category,
         CancellationToken cancellationToken)
     {
-        var products = await _browser.GetProductsFromShwapno(category, cancellationToken);
+        IReadOnlyCollection<ShwapnoProduct> products = await _browser.GetProductsFromShwapno(category, cancellationToken);
 
         return Ok(new { Category = category, ProductsCollected = products.Count });
     }

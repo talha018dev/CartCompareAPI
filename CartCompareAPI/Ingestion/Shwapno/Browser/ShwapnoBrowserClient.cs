@@ -22,13 +22,13 @@ public class ShwapnoBrowserClient(IConfiguration configuration)
                 nameof(category));
         }
 
-        using var playwright = await Playwright.CreateAsync();
+        using IPlaywright playwright = await Playwright.CreateAsync();
 
         cancellationToken.ThrowIfCancellationRequested();
-        await using var browser = await playwright.Chromium.LaunchAsync(
+        await using IBrowser browser = await playwright.Chromium.LaunchAsync(
             new BrowserTypeLaunchOptions { Headless = configuration.GetValue<bool>("Ingestion:Headless") });
 
-        var page = await browser.NewPageAsync();
+        IPage page = await browser.NewPageAsync();
         var allProducts = new Dictionary<string, ShwapnoProduct>();
         var responseTasks = new List<Task>();
         var responseLock = new object();
@@ -40,7 +40,9 @@ public class ShwapnoBrowserClient(IConfiguration configuration)
         void OnResponse(object? sender, IResponse response)
         {
             if (!response.Url.Contains("/api/category/products", StringComparison.OrdinalIgnoreCase))
+            {
                 return;
+            }
 
             lock (responseLock)
             {
@@ -53,12 +55,14 @@ public class ShwapnoBrowserClient(IConfiguration configuration)
             try
             {
                 var json = await response.TextAsync();
-                var result = JsonSerializer.Deserialize<ShwapnoProductResponse>(
+                ShwapnoProductResponse? result = JsonSerializer.Deserialize<ShwapnoProductResponse>(
                     json,
                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
                 if (result?.Products == null)
+                {
                     return;
+                }
 
                 lock (responseLock)
                 {
@@ -66,10 +70,12 @@ public class ShwapnoBrowserClient(IConfiguration configuration)
                     hasNextPage = result.HasNextPage;
                     productResponseCount++;
 
-                    foreach (var product in result.Products)
+                    foreach (ShwapnoProduct product in result.Products)
                     {
                         if (!string.IsNullOrWhiteSpace(product.Sku))
+                        {
                             allProducts[product.Sku] = product;
+                        }
                     }
 
                     Console.WriteLine(
@@ -117,7 +123,9 @@ public class ShwapnoBrowserClient(IConfiguration configuration)
             lock (responseLock)
             {
                 if (!hasNextPage || (totalItems is not null && allProducts.Count >= totalItems))
+                {
                     break;
+                }
 
                 previousCount = allProducts.Count;
             }
@@ -131,7 +139,9 @@ public class ShwapnoBrowserClient(IConfiguration configuration)
             }
 
             if (stalledScrolls > 0)
+            {
                 Console.WriteLine($"No new products loaded. Stalled: {stalledScrolls}/3");
+            }
 
             if (stalledScrolls >= 3)
             {
@@ -161,7 +171,9 @@ public class ShwapnoBrowserClient(IConfiguration configuration)
             Console.WriteLine($"Expected products: {totalItems?.ToString() ?? "unknown"}");
 
             if (productResponseCount == 0)
+            {
                 throw new InvalidOperationException("No Shwapno product API response was captured.");
+            }
 
             return allProducts.Values.ToArray();
         }

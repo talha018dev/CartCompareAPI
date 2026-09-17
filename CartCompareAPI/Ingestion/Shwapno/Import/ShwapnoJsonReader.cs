@@ -10,10 +10,12 @@ public sealed class ShwapnoJsonReader(IWebHostEnvironment environment)
     {
         var filePath = Path.Combine(environment.ContentRootPath, "Ingestion", "Shwapno", "Data", "dairy.json");
         if (!File.Exists(filePath))
+        {
             throw new FileNotFoundException("The Shwapno dairy data file was not found.", filePath);
+        }
 
-        await using var stream = File.OpenRead(filePath);
-        var sourceProducts = await JsonSerializer.DeserializeAsync<List<ShwapnoProduct>>(stream,
+        await using FileStream stream = File.OpenRead(filePath);
+        List<ShwapnoProduct> sourceProducts = await JsonSerializer.DeserializeAsync<List<ShwapnoProduct>>(stream,
             new JsonSerializerOptions { PropertyNameCaseInsensitive = true }, cancellationToken)
             ?? throw new InvalidDataException("The Shwapno dairy data file does not contain a product array.");
 

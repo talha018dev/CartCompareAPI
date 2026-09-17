@@ -11,8 +11,8 @@ public class ShwapnoCatalogInitializer(AppDbContext db)
     public async Task<ShwapnoCatalog> ShwapnoCatalogInitializedAsync(string categorySlug,
     CancellationToken cancellationToken = default)
     {
-        var category = await db.Categories.SingleOrDefaultAsync(x => x.Slug == categorySlug, cancellationToken);
-        var store = await db.Stores.SingleOrDefaultAsync(x => x.Slug == "shwapno", cancellationToken);
+        Category? category = await db.Categories.SingleOrDefaultAsync(x => x.Slug == categorySlug, cancellationToken);
+        Store? store = await db.Stores.SingleOrDefaultAsync(x => x.Slug == "shwapno", cancellationToken);
 
         if (category is null)
         {

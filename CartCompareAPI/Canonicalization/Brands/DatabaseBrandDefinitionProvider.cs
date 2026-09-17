@@ -1,3 +1,4 @@
+using CartCompareAPI.Domain.Entities;
 using CartCompareAPI.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -12,7 +13,7 @@ public sealed class DatabaseBrandDefinitionProvider(
     public async Task<IReadOnlyCollection<BrandDefinition>> GetAllAsync(
         CancellationToken cancellationToken = default)
     {
-        var brands = await db.Brands
+        List<Brand> brands = await db.Brands
             .AsNoTracking()
             .OrderBy(brand => brand.Slug)
             .ToListAsync(cancellationToken);

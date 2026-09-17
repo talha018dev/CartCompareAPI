@@ -11,14 +11,14 @@ public static class GetProductsEndpoint
                 [AsParameters] GetProductsRequest request,
                 GetProductsHandler handler) =>
             {
-                var result = await handler.Handle(request);
+                List<GetProductsResponse> result = await handler.Handle(request);
                 return Results.Ok(result);
             }).WithName("GetProducts").WithTags("Products");
     }
 
     public static int Add(int a, int b)
     {
-        var sum = a+b;
+        var sum = a + b;
         return sum;
     }
 }

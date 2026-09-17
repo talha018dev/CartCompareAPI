@@ -44,7 +44,10 @@ public class ProductQuantityParser : IQuantityParser
             return null;
         }
 
-        if (value <= 0) return null;
+        if (value <= 0)
+        {
+            return null;
+        }
 
         return matchedUnit switch
         {

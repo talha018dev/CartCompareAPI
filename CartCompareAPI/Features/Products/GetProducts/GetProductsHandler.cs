@@ -6,7 +6,7 @@ namespace CartCompareAPI.Features.Products.GetProducts;
 
 public class GetProductsHandler(AppDbContext _db)
 {
-    
+
     public async Task<List<GetProductsResponse>> Handle(
         GetProductsRequest request)
     {
