@@ -30,6 +30,7 @@ public class StoreProductCanonicalizationService(AppDbContext db,
         int matched = 0;
         int created = 0;
         int unresolved = 0;
+        int failed = 0;
 
         foreach (StoreProduct storeProduct in storeProducts)
         {
@@ -53,6 +54,10 @@ public class StoreProductCanonicalizationService(AppDbContext db,
                     unresolved++;
                     break;
 
+                case StoreProductCanonicalizationOutcome.Failed:
+                    failed++;
+                    break;
+
                 default:
                     throw new ArgumentOutOfRangeException();
             }
@@ -64,6 +69,6 @@ public class StoreProductCanonicalizationService(AppDbContext db,
             Matched: matched,
             Created: created,
             Unresolved: unresolved,
-            Failed: 0);
+            Failed: failed);
     }
 }

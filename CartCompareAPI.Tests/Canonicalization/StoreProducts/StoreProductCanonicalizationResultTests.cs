@@ -55,4 +55,19 @@ public sealed class StoreProductCanonicalizationResultTests
             StoreProductCanonicalizationFailure.BrandNotResolved,
             result.Failure);
     }
+
+    [Fact]
+    public void Failed_ShouldContainStoreProductIdAndFailureWithoutProductId()
+    {
+        var storeProductId = Guid.NewGuid();
+
+        var result = StoreProductCanonicalizationResult.Failed(
+            storeProductId,
+            StoreProductCanonicalizationFailure.PersistenceFailed);
+
+        Assert.Equal(storeProductId, result.StoreProductId);
+        Assert.Equal(StoreProductCanonicalizationOutcome.Failed, result.Outcome);
+        Assert.Null(result.ProductId);
+        Assert.Equal(StoreProductCanonicalizationFailure.PersistenceFailed, result.Failure);
+    }
 }

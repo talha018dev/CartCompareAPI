@@ -42,6 +42,7 @@ public static class CanonicalizationServiceCollectionExtensions
         services.AddScoped<IBrandDefinitionProvider, DatabaseBrandDefinitionProvider>();
         services.AddScoped<BrandCatalogInitializer>();
         services.AddScoped<IStoreProductCanonicalizer, StoreProductCanonicalizer>();
+        services.AddScoped<IStoreProductCanonicalizationService, StoreProductCanonicalizationService>();
 
         return services;
     }

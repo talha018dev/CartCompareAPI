@@ -4,5 +4,6 @@ public enum StoreProductCanonicalizationOutcome
 {
     Matched,
     Created,
-    Unresolved
+    Unresolved,
+    Failed
 }

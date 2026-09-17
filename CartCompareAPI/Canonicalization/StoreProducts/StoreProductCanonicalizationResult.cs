@@ -55,4 +55,15 @@ public sealed record StoreProductCanonicalizationResult
             null,
             failure);
     }
+
+    public static StoreProductCanonicalizationResult Failed(
+        Guid storeProductId,
+        StoreProductCanonicalizationFailure failure)
+    {
+        return new StoreProductCanonicalizationResult(
+            storeProductId,
+            StoreProductCanonicalizationOutcome.Failed,
+            null,
+            failure);
+    }
 }

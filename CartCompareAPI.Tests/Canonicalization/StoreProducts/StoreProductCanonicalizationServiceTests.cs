@@ -87,6 +87,43 @@ public sealed class StoreProductCanonicalizationServiceTests
         Assert.Equal(product.Id, second.ProductId);
     }
 
+    [Fact]
+    public async Task CanonicalizePendingAsync_ShouldCountReturnedFailureAndLeaveListingPending()
+    {
+        await using var db = CreateContext();
+        var storeId = Guid.NewGuid();
+        var category = new Category { Id = Guid.NewGuid(), Name = "Dairy", Slug = "dairy" };
+        var listing = Listing(storeId, category.Id, "SKU-A");
+        db.Categories.Add(category);
+        db.StoreProducts.Add(listing);
+        await db.SaveChangesAsync();
+
+        var service = new StoreProductCanonicalizationService(
+            db, new FailedCanonicalizer(), new EmptyBrandDefinitionProvider());
+
+        var summary = await service.CanonicalizePendingAsync(storeId, category.Id);
+
+        Assert.Equal(new StoreProductCanonicalizationSummary(0, 0, 0, 1), summary);
+        Assert.Null((await db.StoreProducts.SingleAsync()).ProductId);
+    }
+
+    [Fact]
+    public async Task CanonicalizePendingAsync_ShouldPropagateUnexpectedException()
+    {
+        await using var db = CreateContext();
+        var storeId = Guid.NewGuid();
+        var category = new Category { Id = Guid.NewGuid(), Name = "Dairy", Slug = "dairy" };
+        db.Categories.Add(category);
+        db.StoreProducts.Add(Listing(storeId, category.Id, "SKU-A"));
+        await db.SaveChangesAsync();
+
+        var service = new StoreProductCanonicalizationService(
+            db, new ThrowingCanonicalizer(), new EmptyBrandDefinitionProvider());
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.CanonicalizePendingAsync(storeId, category.Id));
+    }
+
     private static StoreProduct Listing(
         Guid storeId, Guid categoryId, string sku, Guid? productId = null) => new()
     {
@@ -155,6 +192,28 @@ public sealed class StoreProductCanonicalizationServiceTests
             storeProduct.ProductId = product.Id;
             return StoreProductCanonicalizationResult.Created(storeProduct.Id, product.Id);
         }
+    }
+
+    private sealed class FailedCanonicalizer : IStoreProductCanonicalizer
+    {
+        public Task<StoreProductCanonicalizationResult> CanonicalizeAsync(
+            StoreProduct storeProduct,
+            Category category,
+            IReadOnlyCollection<BrandDefinition> brandDefinitions,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(StoreProductCanonicalizationResult.Failed(
+                storeProduct.Id,
+                StoreProductCanonicalizationFailure.PersistenceFailed));
+    }
+
+    private sealed class ThrowingCanonicalizer : IStoreProductCanonicalizer
+    {
+        public Task<StoreProductCanonicalizationResult> CanonicalizeAsync(
+            StoreProduct storeProduct,
+            Category category,
+            IReadOnlyCollection<BrandDefinition> brandDefinitions,
+            CancellationToken cancellationToken = default) =>
+            throw new InvalidOperationException("Unexpected canonicalization error.");
     }
 
     private sealed class EmptyBrandDefinitionProvider : IBrandDefinitionProvider
