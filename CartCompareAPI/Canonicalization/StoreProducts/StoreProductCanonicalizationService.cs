@@ -10,7 +10,10 @@ public class StoreProductCanonicalizationService(AppDbContext db,
     IBrandDefinitionProvider brandDefinitionProvider)
     : IStoreProductCanonicalizationService
 {
-    public async Task<StoreProductCanonicalizationSummary> CanonicalizePendingAsync(CancellationToken cancellationToken = default)
+    public async Task<StoreProductCanonicalizationSummary> CanonicalizePendingAsync(
+        Guid storeId, 
+        Guid categoryId,
+        CancellationToken cancellationToken = default)
     {
 
         // 1. Load unresolved StoreProducts.

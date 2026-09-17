@@ -36,6 +36,11 @@ public static class DatabaseInitialization
         IStoreProductCanonicalizer canonicalizer =
             scope.ServiceProvider.GetRequiredService<IStoreProductCanonicalizer>();
 
+        Guid shwapnoStoreId = await db.Stores
+            .Where(store => store.Slug == "shwapno")
+            .Select(store => store.Id)
+            .SingleAsync();
+
         Category category = await db.Categories.SingleAsync(
             category => category.Slug == "dairy");
 
@@ -43,7 +48,10 @@ public static class DatabaseInitialization
             await brandDefinitionProvider.GetAllAsync();
 
         List<StoreProduct> pendingListings = await db.StoreProducts
-            .Where(storeProduct => storeProduct.ProductId == null)
+            .Where(storeProduct =>
+                storeProduct.StoreId == shwapnoStoreId &&
+                storeProduct.SourceCategoryId == category.Id &&
+                storeProduct.ProductId == null)
             .OrderBy(storeProduct => storeProduct.ExternalProductId)
             .ToListAsync();
 
