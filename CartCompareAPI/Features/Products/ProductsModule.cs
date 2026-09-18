@@ -18,7 +18,6 @@ public static class ProductsModule
     {
         services.AddScoped<ShwapnoCatalogInitializer>();
         services.AddScoped<ShwapnoProductMapper>();
-        services.AddScoped<ShwapnoJsonReader>();
         services.AddScoped<IShwapnoProductSource>(provider =>
             provider.GetRequiredService<ShwapnoBrowserClient>());
         services.AddScoped<IShwapnoProductImporter>(provider =>
@@ -38,7 +37,6 @@ public static class ProductsModule
 
         services.AddScoped<ShwapnoCatalogInitializer>();
         services.AddScoped<ShwapnoProductMapper>();
-        services.AddScoped<ShwapnoJsonReader>();
 
 
         return services;

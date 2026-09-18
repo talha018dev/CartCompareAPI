@@ -1,9 +1,4 @@
 using CartCompareAPI.Canonicalization.Brands;
-using CartCompareAPI.Canonicalization.StoreProducts;
-using CartCompareAPI.Domain.Entities;
-using CartCompareAPI.Ingestion.Shwapno;
-using CartCompareAPI.Ingestion.Shwapno.Entities;
-using CartCompareAPI.Ingestion.Shwapno.Import;
 using Microsoft.EntityFrameworkCore;
 
 namespace CartCompareAPI.Infrastructure.Data;
@@ -23,53 +18,6 @@ public static class DatabaseInitialization
 
         await brandCatalogInitializer.InitializeAsync();
 
-        ShwapnoDairyImporter importer =
-            scope.ServiceProvider.GetRequiredService<ShwapnoDairyImporter>();
-
-        ShwapnoJsonReader jsonReader = scope.ServiceProvider.GetRequiredService<ShwapnoJsonReader>();
-        List<ShwapnoProduct> sourceProducts = await jsonReader.ReadProductsAsync();
-        await importer.ImportAsync("dairy", sourceProducts);
-
-        IBrandDefinitionProvider brandDefinitionProvider =
-            scope.ServiceProvider.GetRequiredService<IBrandDefinitionProvider>();
-
-        IStoreProductCanonicalizer canonicalizer =
-            scope.ServiceProvider.GetRequiredService<IStoreProductCanonicalizer>();
-
-        Guid shwapnoStoreId = await db.Stores
-            .Where(store => store.Slug == "shwapno")
-            .Select(store => store.Id)
-            .SingleAsync();
-
-        Category category = await db.Categories.SingleAsync(
-            category => category.Slug == "dairy");
-
-        IReadOnlyCollection<BrandDefinition> brandDefinitions =
-            await brandDefinitionProvider.GetAllAsync();
-
-        List<StoreProduct> pendingListings = await db.StoreProducts
-            .Where(storeProduct =>
-                storeProduct.StoreId == shwapnoStoreId &&
-                storeProduct.SourceCategoryId == category.Id &&
-                storeProduct.ProductId == null)
-            .OrderBy(storeProduct => storeProduct.ExternalProductId)
-            .ToListAsync();
-
-        foreach (StoreProduct storeProduct in pendingListings)
-        {
-            StoreProductCanonicalizationResult result =
-                await canonicalizer.CanonicalizeAsync(
-                    storeProduct,
-                    category,
-                    brandDefinitions);
-
-            await db.SaveChangesAsync();
-
-            Console.WriteLine(
-                $"{storeProduct.ExternalProductId}: " +
-                $"{result.Outcome}, " +
-                $"Failure: {result.Failure}");
-        }
 
     }
 }
