@@ -27,7 +27,7 @@ public sealed class DatabaseBrandDefinitionProvider(
             definition => definition.Aliases,
             StringComparer.OrdinalIgnoreCase);
 
-        var unknownBrandKeys = aliasesByBrandKey.Keys
+        string[] unknownBrandKeys = aliasesByBrandKey.Keys
             .Where(brandKey => !brandsBySlug.ContainsKey(brandKey))
             .OrderBy(brandKey => brandKey, StringComparer.OrdinalIgnoreCase)
             .ToArray();

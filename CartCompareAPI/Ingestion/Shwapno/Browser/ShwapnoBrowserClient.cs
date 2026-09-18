@@ -12,7 +12,13 @@ public class ShwapnoBrowserClient(IConfiguration configuration) : IShwapnoProduc
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var categorySlug = category.Trim().ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(category))
+        {
+            throw new UnsupportedShwapnoCategoryException(
+                "A category is required.");
+        }
+
+        string categorySlug = category.Trim().ToLowerInvariant();
 
         if (string.IsNullOrWhiteSpace(categorySlug) ||
             categorySlug.Any(character => !char.IsLetterOrDigit(character) && character != '-'))
@@ -31,11 +37,11 @@ public class ShwapnoBrowserClient(IConfiguration configuration) : IShwapnoProduc
         IPage page = await browser.NewPageAsync();
         var allProducts = new Dictionary<string, ShwapnoProduct>();
         var responseTasks = new List<Task>();
-        var responseLock = new object();
-        var hasNextPage = true;
+        object responseLock = new object();
+        bool hasNextPage = true;
         int? totalItems = null;
-        var productResponseCount = 0;
-        var stalledScrolls = 0;
+        int productResponseCount = 0;
+        int stalledScrolls = 0;
 
         void OnResponse(object? sender, IResponse response)
         {
@@ -54,7 +60,7 @@ public class ShwapnoBrowserClient(IConfiguration configuration) : IShwapnoProduc
         {
             try
             {
-                var json = await response.TextAsync();
+                string json = await response.TextAsync();
                 ShwapnoProductResponse? result = JsonSerializer.Deserialize<ShwapnoProductResponse>(
                     json,
                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
@@ -102,6 +108,12 @@ public class ShwapnoBrowserClient(IConfiguration configuration) : IShwapnoProduc
             navigationResponse = await page.GotoAsync(
                 $"https://www.shwapno.com/{categorySlug}",
                 new PageGotoOptions { WaitUntil = WaitUntilState.NetworkIdle });
+
+            if (navigationResponse?.Status == 404)
+            {
+                throw new UnsupportedShwapnoCategoryException(
+                    $"Shwapno category '{categorySlug}' was not found.");
+            }
         }
         catch (PlaywrightException ex)
         {

@@ -11,7 +11,7 @@ public sealed class BrandHandler(AppDbContext db)
     public Task<BrandResponse?> GetByIdAsync(Guid id) => db.Brands.AsNoTracking().Where(x => x.Id == id).Select(x => new BrandResponse(x.Id, x.Name, x.Slug)).FirstOrDefaultAsync();
     public async Task<CrudResult<BrandResponse>> CreateAsync(UpsertBrandRequest request)
     {
-        var error = await ValidateAsync(request); if (error is not null)
+        string? error = await ValidateAsync(request); if (error is not null)
         {
             return CrudResult<BrandResponse>.Invalid(error);
         }
@@ -26,7 +26,7 @@ public sealed class BrandHandler(AppDbContext db)
             return CrudResult.NotFound();
         }
 
-        var error = await ValidateAsync(request, id); if (error is not null)
+        string? error = await ValidateAsync(request, id); if (error is not null)
         {
             return CrudResult.Invalid(error);
         }
@@ -54,6 +54,6 @@ public sealed class BrandHandler(AppDbContext db)
             return "Name and slug are required.";
         }
 
-        var slug = request.Slug.Trim().ToLowerInvariant(); return await db.Brands.AnyAsync(x => x.Slug == slug && x.Id != currentId) ? "A brand with this slug already exists." : null;
+        string slug = request.Slug.Trim().ToLowerInvariant(); return await db.Brands.AnyAsync(x => x.Slug == slug && x.Id != currentId) ? "A brand with this slug already exists." : null;
     }
 }

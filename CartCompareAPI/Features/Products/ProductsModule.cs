@@ -22,7 +22,7 @@ public static class ProductsModule
             provider.GetRequiredService<ShwapnoBrowserClient>());
         services.AddScoped<IShwapnoProductImporter>(provider =>
             provider.GetRequiredService<ShwapnoDairyImporter>());
-        services.AddScoped<ShwapnoIngestionOrchestrator>();
+        services.AddScoped<IShwapnoIngestionOrchestrator, ShwapnoIngestionOrchestrator>();
         return services;
     }
     public static IServiceCollection AddProductFeatures(this IServiceCollection services)

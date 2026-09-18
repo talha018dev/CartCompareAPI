@@ -8,7 +8,7 @@ public sealed class ShwapnoJsonReader(IWebHostEnvironment environment)
 {
     public async Task<List<ShwapnoProduct>> ReadProductsAsync(CancellationToken cancellationToken = default)
     {
-        var filePath = Path.Combine(environment.ContentRootPath, "Ingestion", "Shwapno", "Data", "dairy.json");
+        string filePath = Path.Combine(environment.ContentRootPath, "Ingestion", "Shwapno", "Data", "dairy.json");
         if (!File.Exists(filePath))
         {
             throw new FileNotFoundException("The Shwapno dairy data file was not found.", filePath);

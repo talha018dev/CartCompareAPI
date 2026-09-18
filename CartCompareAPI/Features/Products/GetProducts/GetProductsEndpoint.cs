@@ -18,7 +18,7 @@ public static class GetProductsEndpoint
 
     public static int Add(int a, int b)
     {
-        var sum = a + b;
+        int sum = a + b;
         return sum;
     }
 }

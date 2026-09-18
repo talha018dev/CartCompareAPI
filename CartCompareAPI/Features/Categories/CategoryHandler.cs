@@ -15,7 +15,7 @@ public sealed class CategoryHandler(AppDbContext db)
 
     public async Task<CrudResult<CategoryResponse>> CreateAsync(UpsertCategoryRequest request)
     {
-        var error = await ValidateAsync(request);
+        string? error = await ValidateAsync(request);
         if (error is not null)
         {
             return CrudResult<CategoryResponse>.Invalid(error);
@@ -35,7 +35,7 @@ public sealed class CategoryHandler(AppDbContext db)
             return CrudResult.NotFound();
         }
 
-        var error = await ValidateAsync(request, id);
+        string? error = await ValidateAsync(request, id);
         if (error is not null)
         {
             return CrudResult.Invalid(error);
@@ -72,7 +72,7 @@ public sealed class CategoryHandler(AppDbContext db)
             return "Name and slug are required.";
         }
 
-        var slug = request.Slug.Trim().ToLowerInvariant();
+        string slug = request.Slug.Trim().ToLowerInvariant();
         return await db.Categories.AnyAsync(x => x.Slug == slug && x.Id != currentId) ? "A category with this slug already exists." : null;
     }
 }

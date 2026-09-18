@@ -1,26 +1,64 @@
-using CartCompareAPI.Ingestion.Shwapno.Entities;
+using CartCompareAPI.Ingestion.Shwapno;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CartCompareAPI.Ingestion.Shwapno.Browser;
 
 [ApiController]
 [Route("api/v1/ingestion/shwapno")]
-public class ShwapnoController : ControllerBase
+public class ShwapnoController(
+    IShwapnoIngestionOrchestrator orchestrator,
+    ILogger<ShwapnoController> logger) : ControllerBase
 {
-    private readonly ShwapnoBrowserClient _browser;
-
-    public ShwapnoController(ShwapnoBrowserClient browser)
-    {
-        _browser = browser;
-    }
-
-    [HttpGet]
+    [HttpPost]
     public async Task<IActionResult> IngestShwapnoProducts(
         [FromQuery] string category,
         CancellationToken cancellationToken)
     {
-        IReadOnlyCollection<ShwapnoProduct> products = await _browser.GetProductsFromShwapno(category, cancellationToken);
+        try
+        {
+            var result = await orchestrator.IngestAsync(
+                category, cancellationToken);
 
-        return Ok(new { Category = category, ProductsCollected = products.Count });
+            return Ok(result);
+        }
+        catch (UnsupportedShwapnoCategoryException ex)
+        {
+            return Error(400, "Unsupported category", ex.Message);
+        }
+        catch (InvalidShwapnoSourceDataException ex)
+        {
+            return Error(422, "Invalid Shwapno product data", ex.Message);
+        }
+        catch (OperationCanceledException)
+            when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(
+                ex,
+                "Shwapno ingestion failed for category {Category}. TraceId {TraceId}",
+                category,
+                HttpContext.TraceIdentifier);
+
+            return Error(
+                500,
+                "Ingestion failed",
+                "An unexpected error occurred.");
+        }
+    }
+
+    private IActionResult Error(int status, string title, string detail)
+    {
+        var problem = new ProblemDetails
+        {
+            Status = status,
+            Title = title,
+            Detail = detail
+        };
+
+        problem.Extensions["traceId"] = HttpContext.TraceIdentifier;
+        return StatusCode(status, problem);
     }
 }

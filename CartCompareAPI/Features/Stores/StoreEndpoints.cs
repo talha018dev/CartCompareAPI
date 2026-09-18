@@ -89,7 +89,7 @@ public static class StoreEndpoints
             return Results.ValidationProblem(new Dictionary<string, string[]> { ["request"] = ["Name and slug are required."] });
         }
 
-        var slug = request.Slug.Trim().ToLowerInvariant();
+        string slug = request.Slug.Trim().ToLowerInvariant();
         if (await db.Stores.AnyAsync(x => x.Slug == slug && x.Id != currentId))
         {
             return Results.ValidationProblem(new Dictionary<string, string[]> { ["slug"] = ["A store with this slug already exists."] });

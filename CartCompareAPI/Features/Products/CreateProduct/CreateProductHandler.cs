@@ -9,7 +9,7 @@ public sealed class CreateProductHandler(AppDbContext db)
 {
     public async Task<CrudResult<CreateProductResponse>> Handle(CreateProductRequest request)
     {
-        var error = await ProductRequestValidator.Validate(db, request.CategoryId, request.BrandId, request.Name, request.Unit, request.Quantity);
+        string? error = await ProductRequestValidator.Validate(db, request.CategoryId, request.BrandId, request.Name, request.Unit, request.Quantity);
         if (error is not null)
         {
             return CrudResult<CreateProductResponse>.Invalid(error);

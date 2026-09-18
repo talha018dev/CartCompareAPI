@@ -15,7 +15,7 @@ public sealed class EditProductHandler(AppDbContext db)
             return CrudResult.NotFound();
         }
 
-        var error = await ProductRequestValidator.Validate(db, request.CategoryId, request.BrandId, request.Name, request.Unit, request.Quantity);
+        string? error = await ProductRequestValidator.Validate(db, request.CategoryId, request.BrandId, request.Name, request.Unit, request.Quantity);
         if (error is not null)
         {
             return CrudResult.Invalid(error);

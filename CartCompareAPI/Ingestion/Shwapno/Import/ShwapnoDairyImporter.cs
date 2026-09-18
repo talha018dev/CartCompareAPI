@@ -22,33 +22,35 @@ public sealed class ShwapnoDairyImporter(
     {
         cancellationToken.ThrowIfCancellationRequested();
 
+        int createdProductCount = 0;
+        int updatedProductCount = 0;
+
         if (string.IsNullOrWhiteSpace(categorySlug) ||
             categorySlug.Any(character => !char.IsLetterOrDigit(character) && character != '-'))
         {
-            throw new ArgumentException(
-                "Category must contain only letters, numbers, and hyphens.",
-                nameof(categorySlug));
+            throw new UnsupportedShwapnoCategoryException(
+                "Category must contain only letters, numbers, and hyphens.");
         }
 
-        ArgumentNullException.ThrowIfNull(sourceProducts);
-        if (sourceProducts.Count == 0)
+        if (sourceProducts is null || sourceProducts.Count == 0)
         {
-            throw new ArgumentException("At least one product is required.", nameof(sourceProducts));
+            throw new InvalidShwapnoSourceDataException(
+                "Shwapno returned no products.");
         }
 
-        int createdProductCount = 0;
-        int updatedProductCount = 0;
 
         foreach (ShwapnoProduct? source in sourceProducts)
         {
             if (source is null || string.IsNullOrWhiteSpace(source.Sku))
             {
-                throw new ArgumentException("Every product must have a SKU.", nameof(sourceProducts));
+                throw new InvalidShwapnoSourceDataException(
+                    "A Shwapno product is missing its SKU.");
             }
 
             if (source.Price is null || source.Price.PriceValue <= 0)
             {
-                throw new ArgumentException("Every product must have a positive price.", nameof(sourceProducts));
+                throw new InvalidShwapnoSourceDataException(
+                    "A Shwapno product is missing a valid price.");
             }
         }
 
@@ -84,7 +86,7 @@ public sealed class ShwapnoDairyImporter(
         await db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 
-        var summary = new ShwapnoImportSummary(
+        ShwapnoImportSummary summary = new(
             Received: sourceProducts.Count,
             Created: createdProductCount,
             Updated: updatedProductCount

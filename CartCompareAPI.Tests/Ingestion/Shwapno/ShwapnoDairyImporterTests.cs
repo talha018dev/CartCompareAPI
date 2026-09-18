@@ -70,7 +70,7 @@ public sealed class ShwapnoDairyImporterTests
         var importer = CreateImporter(db);
         var products = new[] { ValidProduct() };
 
-        await Assert.ThrowsAsync<ArgumentException>(() =>
+        await Assert.ThrowsAsync<UnsupportedShwapnoCategoryException>(() =>
             importer.ImportAsync(categorySlug!, products));
 
         await AssertNoCatalogWrites(db);
@@ -99,7 +99,7 @@ public sealed class ShwapnoDairyImporterTests
         if (invalidInput == "missing-price") product.Price = null!;
         if (invalidInput == "zero-price") product.Price.PriceValue = 0;
 
-        await Assert.ThrowsAsync<ArgumentException>(() =>
+        await Assert.ThrowsAsync<InvalidShwapnoSourceDataException>(() =>
             importer.ImportAsync("fresh-fruits", products));
 
         await AssertNoCatalogWrites(db);
@@ -111,7 +111,7 @@ public sealed class ShwapnoDairyImporterTests
         await using var db = CreateContext();
         var importer = CreateImporter(db);
 
-        await Assert.ThrowsAsync<ArgumentNullException>(() =>
+        await Assert.ThrowsAsync<InvalidShwapnoSourceDataException>(() =>
             importer.ImportAsync("dairy", null!));
 
         await AssertNoCatalogWrites(db);

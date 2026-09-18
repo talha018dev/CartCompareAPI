@@ -7,7 +7,7 @@ namespace CartCompareAPI.Ingestion.Shwapno;
 public sealed class ShwapnoIngestionOrchestrator(
     IShwapnoProductSource productSource,
     IShwapnoProductImporter importer,
-    IStoreProductCanonicalizationService canonicalizationService)
+    IStoreProductCanonicalizationService canonicalizationService) : IShwapnoIngestionOrchestrator
 {
     public async Task<ShwapnoIngestionResult> IngestAsync(
         string categorySlug,
