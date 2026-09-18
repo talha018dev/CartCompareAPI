@@ -14,9 +14,9 @@ public class ShwapnoIngestionExceptionHandler : IExceptionHandler
 
         (int status, string title) = exception switch
         {
-            UnsupportedShwapnoCategoryException => (400, "Unsupported Category"),
-            InvalidShwapnoSourceDataException => (422, "Invalid Product Data"),
-            _ => (500, "Internal Server Error")
+            UnsupportedShwapnoCategoryException => (400, "Unsupported category"),
+            InvalidShwapnoSourceDataException => (422, "Invalid Shwapno product data"),
+            _ => (0, "")
         };
 
         if (status == 0)
