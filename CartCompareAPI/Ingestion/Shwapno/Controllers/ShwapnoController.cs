@@ -15,7 +15,7 @@ public class ShwapnoController(
         [FromQuery] string category,
         CancellationToken cancellationToken)
     {
-        var result = await orchestrator.IngestAsync(
+        ShwapnoIngestionResult result = await orchestrator.IngestAsync(
             category, cancellationToken);
 
         return Ok(result);

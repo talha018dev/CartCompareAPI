@@ -46,9 +46,13 @@ public sealed class ShwapnoControllerTests
     }
 
     private static ShwapnoIngestionResult SampleResult() => new(
+        ShwapnoIngestionStatus.Completed,
         new ShwapnoScrapeSummary(2),
         new ShwapnoImportSummary(2, 1, 1),
-        new StoreProductCanonicalizationSummary(1, 1, 0, 0));
+        new ShwapnoCanonicalizationResult(
+            true,
+            new StoreProductCanonicalizationSummary(1, 1, 0, 0),
+            null));
 
     private sealed class FakeOrchestrator(
         Func<string, CancellationToken, Task<ShwapnoIngestionResult>> ingest)

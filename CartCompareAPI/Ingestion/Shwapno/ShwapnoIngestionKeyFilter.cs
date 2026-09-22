@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.Extensions.Primitives;
 
 namespace CartCompareAPI.Ingestion.Shwapno;
 
@@ -20,7 +21,7 @@ public class ShwapnoIngestionKeyFilter(IConfiguration configuration) : IAsyncAct
             return;
         }
 
-        if (!context.HttpContext.Request.Headers.TryGetValue("X-Ingestion-Key", out var suppliedHeader) ||
+        if (!context.HttpContext.Request.Headers.TryGetValue("X-Ingestion-Key", out StringValues suppliedHeader) ||
             suppliedHeader.Count != 1 ||
             string.IsNullOrEmpty(suppliedHeader[0]))
         {

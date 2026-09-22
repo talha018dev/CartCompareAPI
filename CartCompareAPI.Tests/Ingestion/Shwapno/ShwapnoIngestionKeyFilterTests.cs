@@ -150,9 +150,13 @@ public sealed class ShwapnoIngestionKeyFilterTests
             CallCount++;
             LastCategory = categorySlug;
             return Task.FromResult(new ShwapnoIngestionResult(
+                ShwapnoIngestionStatus.Completed,
                 new ShwapnoScrapeSummary(2),
                 new ShwapnoImportSummary(2, 1, 1),
-                new StoreProductCanonicalizationSummary(1, 1, 0, 0)));
+                new ShwapnoCanonicalizationResult(
+                    true,
+                    new StoreProductCanonicalizationSummary(1, 1, 0, 0),
+                    null)));
         }
     }
 }
