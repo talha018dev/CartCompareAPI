@@ -82,6 +82,8 @@ public sealed class ShwapnoIngestionKeyFilterTests
         builder.Services.AddSingleton<IConfiguration>(configuration);
         builder.Services.AddSingleton<IShwapnoIngestionOrchestrator>(orchestrator);
         builder.Services.AddScoped<ShwapnoIngestionKeyFilter>();
+        builder.Services.AddSingleton<ShwapnoIngestionConcurrencyGuard>();
+        builder.Services.AddScoped<ShwapnoIngestionConcurrencyFilter>();
         await using var host = builder.Build();
         using var scope = host.Services.CreateScope();
 

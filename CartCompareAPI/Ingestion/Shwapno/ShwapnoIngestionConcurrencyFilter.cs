@@ -33,7 +33,7 @@ public class ShwapnoIngestionConcurrencyFilter(ShwapnoIngestionConcurrencyGuard 
         {
             await next();
         }
-        catch
+        finally
         {
             guard.Release();
         }
