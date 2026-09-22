@@ -14,7 +14,7 @@ builder.Services.AddCanonicalization(builder.Configuration);
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddProductFeatures();
 builder.Services.AddShwapnoIngestion();
-builder.Services.AddScoped<ShwapnoIngestionKeyFilter>();
+
 
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<ShwapnoIngestionExceptionHandler>();

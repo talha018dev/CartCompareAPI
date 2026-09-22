@@ -9,7 +9,8 @@ public class ShwapnoController(
     IShwapnoIngestionOrchestrator orchestrator) : ControllerBase
 {
     [HttpPost]
-    [ServiceFilter(typeof(ShwapnoIngestionKeyFilter))]
+    [ServiceFilter(typeof(ShwapnoIngestionKeyFilter), Order = 0)]
+    [ServiceFilter(typeof(ShwapnoIngestionConcurrencyFilter), Order = 1)]
     public async Task<IActionResult> IngestShwapnoProducts(
         [FromQuery] string category,
         CancellationToken cancellationToken)

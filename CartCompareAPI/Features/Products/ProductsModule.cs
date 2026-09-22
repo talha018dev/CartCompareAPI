@@ -16,6 +16,8 @@ public static class ProductsModule
 {
     public static IServiceCollection AddShwapnoIngestion(this IServiceCollection services)
     {
+        services.AddSingleton<ShwapnoIngestionConcurrencyGuard>();
+
         services.AddScoped<ShwapnoCatalogInitializer>();
         services.AddScoped<ShwapnoProductMapper>();
         services.AddScoped<IShwapnoProductSource>(provider =>
@@ -23,6 +25,9 @@ public static class ProductsModule
         services.AddScoped<IShwapnoProductImporter>(provider =>
             provider.GetRequiredService<ShwapnoDairyImporter>());
         services.AddScoped<IShwapnoIngestionOrchestrator, ShwapnoIngestionOrchestrator>();
+        services.AddScoped<ShwapnoIngestionConcurrencyFilter>();
+        services.AddScoped<ShwapnoIngestionKeyFilter>();
+        
         return services;
     }
     public static IServiceCollection AddProductFeatures(this IServiceCollection services)
