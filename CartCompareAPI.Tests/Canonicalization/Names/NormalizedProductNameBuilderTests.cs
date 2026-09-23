@@ -35,6 +35,18 @@ public sealed class NormalizedProductNameBuilderTests
     }
 
     [Fact]
+    public void Build_WithoutBrand_ShouldRetainEntireProductDescription()
+    {
+        string result = builder.Build(
+            "Miniket Rice 5kg Bag",
+            brand: null,
+            new ParsedQuantity(5000, "g", "5kg"),
+            new ParsedPackageType("bag", "bag"));
+
+        Assert.Equal("miniket rice", result);
+    }
+
+    [Fact]
     public void Build_ShouldRemovePackageSuffixAndPromotion()
     {
         string result = builder.Build(

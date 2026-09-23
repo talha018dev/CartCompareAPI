@@ -8,7 +8,7 @@ public interface INormalizedProductNameBuilder
 {
     string Build(
         string productName,
-        BrandResolution brand,
+        BrandResolution? brand,
         ParsedQuantity quantity,
         ParsedPackageType? packageType);
 }

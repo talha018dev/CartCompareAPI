@@ -25,12 +25,6 @@ public sealed class ProductNormalizationService(
         }
 
         BrandResolution? brand = brandResolver.Resolve(productName, brands);
-        if (brand is null)
-        {
-            return ProductNormalizationResult.Unresolved(
-                ProductNormalizationFailure.BrandNotResolved);
-        }
-
         ParsedQuantity? quantity = quantityParser.Parse(productName);
         if (quantity is null)
         {

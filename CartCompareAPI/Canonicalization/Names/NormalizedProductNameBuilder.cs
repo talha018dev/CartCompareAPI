@@ -15,15 +15,18 @@ public sealed class NormalizedProductNameBuilder(
 
     public string Build(
         string productName,
-        BrandResolution brand,
+        BrandResolution? brand,
         ParsedQuantity quantity,
         ParsedPackageType? packageType)
     {
         string normalizedName = nameNormalizer.Normalize(productName);
 
-        normalizedName = RemovePhrase(
-            normalizedName,
-            nameNormalizer.Normalize(brand.MatchedAlias));
+        if (brand is not null)
+        {
+            normalizedName = RemovePhrase(
+                normalizedName,
+                nameNormalizer.Normalize(brand.MatchedAlias));
+        }
         normalizedName = RemovePhrase(
             normalizedName,
             nameNormalizer.Normalize(quantity.MatchedText));

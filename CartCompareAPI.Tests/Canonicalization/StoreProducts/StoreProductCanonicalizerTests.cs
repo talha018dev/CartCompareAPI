@@ -228,6 +228,50 @@ public sealed class StoreProductCanonicalizerTests
         Assert.Equal(EntityState.Added, db.Entry(createdProduct).State);
     }
 
+    [Fact]
+    public async Task CanonicalizeAsync_WithoutResolvedBrand_ShouldCreateBrandlessProduct()
+    {
+        await using AppDbContext db = CreateDbContext();
+        Category category = CreateCategory();
+        var normalizedProduct = new NormalizedProduct(
+            "Miniket Rice 5kg Bag",
+            "miniket rice",
+            Brand: null,
+            new ParsedQuantity(5000m, "g", "5kg"),
+            new ParsedPackageType("bag", "bag"),
+            Variant: null);
+        var keyBuilder = new CanonicalKeyBuilder();
+        var canonicalizer = new StoreProductCanonicalizer(
+            db,
+            new StubNormalizationService(
+                ProductNormalizationResult.Success(normalizedProduct)),
+            keyBuilder,
+            TimeProvider.System);
+        var storeProduct = new StoreProduct
+        {
+            Id = Guid.NewGuid(),
+            StoreProductName = normalizedProduct.SourceName
+        };
+
+        StoreProductCanonicalizationResult result =
+            await canonicalizer.CanonicalizeAsync(
+                storeProduct,
+                category,
+                [],
+                CancellationToken.None);
+
+        Assert.Equal(StoreProductCanonicalizationOutcome.Created, result.Outcome);
+        Assert.Null(result.Failure);
+        Product createdProduct = Assert.Single(db.Products.Local);
+        Assert.Null(createdProduct.BrandId);
+        Assert.Null(createdProduct.Brand);
+        Assert.Equal(
+            "dairy|unbranded|miniket rice||5000-g|bag",
+            createdProduct.CanonicalKey);
+        Assert.Equal(createdProduct.Id, storeProduct.ProductId);
+        Assert.Same(createdProduct, storeProduct.Product);
+    }
+
     private static AppDbContext CreateDbContext()
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()

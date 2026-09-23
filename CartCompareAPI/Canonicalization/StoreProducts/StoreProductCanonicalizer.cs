@@ -57,17 +57,22 @@ public sealed class StoreProductCanonicalizer(
                 existingProduct.Id);
         }
 
-        Brand? brand = await db.Brands
-            .SingleOrDefaultAsync(
-                candidate =>
-                    candidate.Slug == normalizedProduct.Brand.BrandKey,
-                cancellationToken);
+        Brand? brand = null;
 
-        if (brand is null)
+        if (normalizedProduct.Brand is not null)
         {
-            return StoreProductCanonicalizationResult.Unresolved(
-                storeProduct.Id,
-                StoreProductCanonicalizationFailure.BrandRecordNotFound);
+            brand = await db.Brands
+                .SingleOrDefaultAsync(
+                    candidate =>
+                        candidate.Slug == normalizedProduct.Brand.BrandKey,
+                    cancellationToken);
+
+            if (brand is null)
+            {
+                return StoreProductCanonicalizationResult.Unresolved(
+                    storeProduct.Id,
+                    StoreProductCanonicalizationFailure.BrandRecordNotFound);
+            }
         }
 
         DateTime now = timeProvider.GetUtcNow().UtcDateTime;
@@ -96,7 +101,7 @@ public sealed class StoreProductCanonicalizer(
     private static Product CreateProduct(
         StoreProduct storeProduct,
         Category category,
-        Brand brand,
+        Brand? brand,
         NormalizedProduct normalizedProduct,
         string canonicalKey,
         DateTime now)
@@ -106,7 +111,7 @@ public sealed class StoreProductCanonicalizer(
             Id = Guid.NewGuid(),
             CategoryId = category.Id,
             Category = category,
-            BrandId = brand.Id,
+            BrandId = brand?.Id,
             Brand = brand,
             Name = normalizedProduct.SourceName.Trim(),
             NormalizedName = normalizedProduct.NormalizedName,

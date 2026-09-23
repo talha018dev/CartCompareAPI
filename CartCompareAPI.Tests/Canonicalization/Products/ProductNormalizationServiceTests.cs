@@ -37,7 +37,7 @@ public sealed class ProductNormalizationServiceTests
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Product);
         Assert.Equal("full cream milk powder", result.Product.NormalizedName);
-        Assert.Equal("marks", result.Product.Brand.BrandKey);
+        Assert.Equal("marks", result.Product.Brand?.BrandKey);
         Assert.Equal(1000, result.Product.Quantity.Value);
         Assert.Equal("g", result.Product.Quantity.Unit);
         Assert.Equal("tin", result.Product.PackageType?.Value);
@@ -45,16 +45,19 @@ public sealed class ProductNormalizationServiceTests
     }
 
     [Fact]
-    public void Normalize_WithUnknownBrand_ShouldBeUnresolved()
+    public void Normalize_WithUnknownBrand_ShouldReturnBrandlessProduct()
     {
         ProductNormalizationResult result = service.Normalize(
             "Unknown Full Cream Milk Powder 1kg",
             [Marks]);
 
-        Assert.False(result.IsSuccess);
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Product);
+        Assert.Null(result.Product.Brand);
         Assert.Equal(
-            ProductNormalizationFailure.BrandNotResolved,
-            result.Failure);
+            "unknown full cream milk powder",
+            result.Product.NormalizedName);
+        Assert.Null(result.Failure);
     }
 
     [Fact]

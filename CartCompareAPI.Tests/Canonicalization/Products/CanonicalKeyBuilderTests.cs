@@ -83,6 +83,29 @@ public sealed class CanonicalKeyBuilderTests
             builder.Build("dairy", large));
     }
 
+    [Fact]
+    public void Build_WithoutBrand_ShouldUseStableUnbrandedSegment()
+    {
+        NormalizedProduct product = CreateProduct(
+            5000,
+            "g",
+            "bag",
+            []) with
+        {
+            Brand = null,
+            NormalizedName = "miniket rice"
+        };
+
+        string key = builder.Build(
+            "loose-rice",
+            product,
+            includePackageDisambiguator: true);
+
+        Assert.Equal(
+            "loose-rice|unbranded|miniket rice||5000-g|bag",
+            key);
+    }
+
     private static NormalizedProduct CreateProduct(
         decimal quantity,
         string unit,

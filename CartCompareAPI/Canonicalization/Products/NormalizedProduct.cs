@@ -8,7 +8,7 @@ namespace CartCompareAPI.Canonicalization.Products;
 public sealed record NormalizedProduct(
     string SourceName,
     string NormalizedName,
-    BrandResolution Brand,
+    BrandResolution? Brand,
     ParsedQuantity Quantity,
     ParsedPackageType? PackageType,
     ParsedVariant? Variant);

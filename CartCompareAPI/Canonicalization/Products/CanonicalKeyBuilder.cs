@@ -28,10 +28,13 @@ public sealed class CanonicalKeyBuilder : ICanonicalKeyBuilder
             ? product.PackageType?.Value ?? string.Empty
             : string.Empty;
 
+        string brandKey = product.Brand?.BrandKey.Trim().ToLowerInvariant()
+            ?? "unbranded";
+
         return string.Join(
             "|",
             categoryKey.Trim().ToLowerInvariant(),
-            product.Brand.BrandKey.Trim().ToLowerInvariant(),
+            brandKey,
             product.NormalizedName,
             variant,
             $"{quantity}-{product.Quantity.Unit}",
