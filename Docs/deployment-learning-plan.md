@@ -4,7 +4,7 @@
 
 Learn containerization, build a CI/CD pipeline, publish CartCompareAPI for other people to use, add traffic/performance monitoring, and run controlled load tests. Complete the numbered steps in order. Each step has a **checkpoint**: do not move on until you can demonstrate it. Keep a short log of commands, decisions, measurements, and costs in your own notes or pull requests.
 
-**Proposed learning stack:** Docker and Docker Compose locally; GitHub Actions for CI/CD; Azure Container Apps for the public API; managed PostgreSQL (Neon is a low-cost starting candidate); Azure's built-in logs/metrics first, then OpenTelemetry/Application Insights; k6 for load tests. Provider plans, quotas, supported .NET versions, and prices change: verify them before creating paid resources. The architecture is portable, so choosing another container host later does not invalidate the early steps.
+**Proposed learning stack:** Docker and Docker Compose locally; GitHub Actions for CI/CD; Azure Container Apps for the public API; an Azure Container Apps scheduled job for nightly Shwapno ingestion; managed PostgreSQL (Neon is a low-cost starting candidate); Azure's built-in logs/metrics first, then OpenTelemetry/Application Insights; k6 for load tests. Provider plans, quotas, supported .NET versions, and prices change: verify them before creating paid resources. The architecture is portable, so choosing another container host later does not invalidate the early steps.
 
 This document is a plan, not a claim that these features already exist.
 
@@ -24,16 +24,18 @@ GitHub push / pull request
     -> GitHub Actions: build + test + container build
     -> image registry
     -> Azure Container Apps: public HTTPS API
+    -> Azure Container Apps Job: scheduled nightly ingestion
     -> managed PostgreSQL
 
 API stdout/stderr -> platform logs
 API + platform metrics/traces -> monitoring
-explicit ingestion request/job -> Playwright -> in-memory products -> import commit -> canonicalize
+scheduled one-shot worker -> Playwright -> in-memory products -> import commit -> canonicalize -> exit
+authorized manual request -> the same ingestion orchestrator for testing/recovery
 separate deployment task -> migrate
 k6 -> isolated test deployment and database
 ```
 
-Do not add a queue or dedicated worker merely to complete this plan. Introduce one later if ingestion needs scheduling, retries, or separate scaling.
+The scheduled worker is deliberate because ingestion must run during a chosen low-traffic nightly window and independently of API replica lifetime. Do not add a queue yet; introduce one only if retries, backpressure, or multiple workers require it.
 
 ## Step 1 - Rebuild ingestion incrementally
 
@@ -193,25 +195,33 @@ Complete and test each substep separately. Do not implement the whole pipeline i
 
 **Checkpoint:** A canonicalization failure never erases a successful import and the caller can see exactly which phase failed.
 
-### 1.15 Decide when the HTTP request is too long
+### 1.15 Build a one-shot ingestion worker and test it locally
 
-- Measure real scrape/import/canonicalization duration.
-- Keep synchronous `200 OK` only while it reliably fits client and hosting timeouts.
-- If it becomes long-running, introduce a background job deliberately: POST returns `202 Accepted` plus a job ID/status URL, and a worker performs ingestion.
-- Do not fake a queued implementation behind a contract that promises final summaries; change the contract to return a start/job result.
+**Decision:** Production ingestion runs as an Azure Container Apps scheduled job during a configured nightly low-traffic window. It does not run from an in-process API timer. Keep the authorized synchronous endpoint for local testing and manual recovery until a separate manual-job trigger is justified.
 
-**Checkpoint:** The chosen synchronous or background contract accurately describes when work is complete.
+- Create a worker/console entry point that starts, resolves the existing ingestion orchestrator through dependency injection, processes the configured category list, records/logs each phase result, and exits.
+- Supply categories through configuration such as `Ingestion__Categories`; do not hard-code a single category or a production schedule in application code.
+- Run categories sequentially initially so browser and database load remain bounded. Define whether one category failure stops the run or allows later categories to continue, and return a nonzero process exit code when the overall job fails.
+- Reuse the same scrape/import/canonicalization services as the API. Do not call the API over HTTP from the worker and do not require the ingestion API key for this internal execution path.
+- Preserve cancellation and partial-success behavior. Ensure logs identify the category and phase without exposing credentials or internal exception details to public clients.
+- Add worker tests for configured category order, empty configuration, failure/partial-success aggregation, cancellation, and exit status.
+- Run the worker locally against a disposable PostgreSQL database. Verify it performs one run and exits rather than remaining alive as a timer.
+- Measure scrape, import, canonicalization, and total duration for small and large categories. Use those measurements later to choose the Container Apps job timeout and retry policy.
+- During deployment, configure an Azure Container Apps **Schedule** job with `parallelism = 1` and `replicaCompletionCount = 1`. Azure evaluates its five-field cron expression in UTC, so document both the desired Dhaka time and its UTC expression.
+- Treat the current in-memory concurrency guard as API-process protection only. Before allowing manual and scheduled ingestion to overlap across processes, add a PostgreSQL/distributed lock or operationally disable the manual endpoint during the scheduled window.
+
+**Checkpoint:** One local command runs all configured categories exactly once, reports each result, returns the correct exit code, writes no intermediate JSON, and exits. The intended Dhaka schedule and equivalent UTC cron expression are documented.
 
 ### Step 1 completion checkpoint
 
-Starting or restarting the API performs no ingestion or canonicalization. One authorized POST request passes Playwright results directly in memory, commits the import, then canonicalizes pending listings. Tests cover ordering, cancellation, validation, concurrency, and phase failure behavior.
+Starting or restarting the API performs no ingestion or canonicalization. The authorized POST request and the one-shot worker reuse the same orchestrator, which passes Playwright results directly in memory, commits the import, then canonicalizes pending listings. The worker processes configured categories once and exits. Tests cover ordering, cancellation, validation, API concurrency, phase failure behavior, worker aggregation, and worker exit status.
 
 ## Step 2 - Establish a reproducible deployment baseline
 
 **Learn:** what the app requires to build, start, and serve a request after the ingestion refactor.
 
 - Record `dotnet --info`, then run `dotnet restore`, `dotnet build`, and `dotnet test` from the repository root.
-- Run the API against a disposable local PostgreSQL database. Exercise at least one read endpoint, one write endpoint, and the ingestion endpoint; record current behavior and test count.
+- Run the API and one-shot ingestion worker against a disposable local PostgreSQL database. Exercise at least one read endpoint, one write endpoint, the authorized ingestion endpoint, and one worker run; record current behavior and test count.
 - Inventory configuration, external services, startup side effects, files written at runtime, and endpoints that must not be publicly writable.
 - Decide what data is disposable and what must be backed up before later migrations.
 
@@ -240,29 +250,29 @@ Starting or restarting the API performs no ingestion or canonicalization. One au
 
 **Checkpoint:** Health endpoints and useful structured startup/request/error logs work locally.
 
-## Step 5 - Build and run the API container
+## Step 5 - Build and run the API and ingestion containers
 
 **Learn:** image layers, build stages, ports, environment variables, and ephemeral filesystems.
 
-- Add a multi-stage `Dockerfile` and `.dockerignore`; build with the .NET 10 SDK and run with an appropriate .NET 10 runtime base.
-- If the image runs Playwright, install the matching Chromium browser and Linux dependencies. Test headless mode: the current `Headless = false` is not suitable for a typical headless cloud container. Keep browser installation out of the API image if only a separate ingestion job needs it.
+- Add multi-stage container builds and `.dockerignore`; build with the .NET 10 SDK and run with appropriate .NET 10 runtime bases. Produce a lean API image and a separate ingestion-job image, or document a justified shared-image design with distinct entry points.
+- Install the matching Chromium browser and Linux dependencies in the ingestion-job image. Test headless mode: `Headless = false` is not suitable for a typical headless cloud container. Keep Playwright and browser dependencies out of the API runtime image when the API no longer executes ingestion directly.
 - Do not require bundled Shwapno JSON data for live ingestion. Include only explicitly labeled fixture/offline-import files that are still intentionally used.
 - Set a predictable HTTP listening port and pass configuration with environment variables. Do not publish a database port to the internet.
 - Run as a non-root user where feasible. Inspect image size and scan the image for known vulnerabilities.
-- Verify a live ingestion passes products in memory and creates no intermediate JSON file. If a future audit/debug export is required, design it as a separate optional object-storage feature rather than the ingestion handoff.
+- Run the ingestion image locally and verify it passes products in memory, creates no intermediate JSON file, completes once, and exits. If a future audit/debug export is required, design it as a separate optional object-storage feature rather than the ingestion handoff.
 
-**Checkpoint:** `docker build` succeeds; `docker run` serves the API and health endpoint using an external PostgreSQL connection; no credentials are inside the image.
+**Checkpoint:** Both images build; the API image serves the API and health endpoint; the ingestion image completes one disposable run and exits; both use an external PostgreSQL connection and contain no credentials.
 
 ## Step 6 - Learn local multi-container operation
 
 **Learn:** Compose networking, service names, volumes, and resource limits.
 
-- Add a local-only Compose file with API and PostgreSQL services, a named PostgreSQL volume, health checks, and environment-variable configuration. Keep real passwords in an ignored local environment file.
+- Add a local-only Compose file with API and PostgreSQL services, a named PostgreSQL volume, health checks, and environment-variable configuration. Define ingestion as an explicitly invoked one-shot service/profile rather than an always-running service. Keep real passwords in an ignored local environment file.
 - Verify the API connects to the Compose service name, not `localhost` inside its container.
 - Recreate the API container and confirm database data persists. Then intentionally recreate a disposable database volume in a safe test environment to learn the difference. Never use that exercise against valuable data.
 - Set trial CPU and memory limits. Observe `docker stats` while serving read requests and while running a browser job separately.
 
-**Checkpoint:** One documented Compose command starts a usable local stack; a container restart does not erase the database.
+**Checkpoint:** One documented Compose command starts a usable local stack, another runs ingestion once, and a container restart does not erase the database.
 
 ## Step 7 - Build continuous integration (CI)
 
@@ -295,15 +305,16 @@ Starting or restarting the API performs no ingestion or canonicalization. One au
 - Push an image tagged with its Git commit SHA. Configure secrets, memory/CPU, public ingress, target port, and health probes. Start with one known-small configuration and measure before adjusting it.
 - Set minimum replicas to zero for cheap learning if cold starts are acceptable; otherwise choose one and review its idle cost. Cap maximum replicas to limit surprise load-test costs.
 - Apply the migration once, then deploy the API. Verify HTTPS, a public read endpoint, health checks, logs, and database connectivity from outside your network.
+- Deploy the ingestion image as an Azure Container Apps scheduled job. Configure the documented UTC cron expression, `parallelism = 1`, `replicaCompletionCount = 1`, a measured timeout, an explicit retry policy, database secrets, and no public ingress. Trigger one manual test execution before enabling the schedule.
 - Check that unauthorized writes and ingestion cannot be triggered publicly. Add a custom domain only after the provider URL works.
 
-**Checkpoint:** Another person can call a documented public read endpoint over HTTPS; a redeploy/rollback can be demonstrated; no production secret appears in logs or image history.
+**Checkpoint:** Another person can call a documented public read endpoint over HTTPS; the scheduled job completes a controlled execution and its logs are visible; a redeploy/rollback can be demonstrated; no production secret appears in logs or image history.
 
 ## Step 10 - Automate continuous deployment (CD)
 
 **Learn:** promotion, identity federation, rollout verification, and rollback.
 
-- Extend GitHub Actions so a successful protected-branch merge builds, tests, tags, and pushes the image, then updates the Container App.
+- Extend GitHub Actions so a successful protected-branch merge builds, tests, tags, and pushes the API and ingestion images, then updates the Container App and scheduled job definitions.
 - Prefer GitHub-to-Azure OpenID Connect/workload identity over a long-lived cloud password. Scope cloud permissions to this deployment.
 - Keep migrations as an explicit pre-deployment or release job, with a reviewed rollback/restore plan for destructive schema changes. Do not blindly run migration from each replica.
 - After deployment, call readiness and a representative read endpoint. If verification fails, stop promotion and use the previous known-good revision/image; remember that rolling back code does not automatically roll back database schema.
@@ -317,7 +328,7 @@ Starting or restarting the API performs no ingestion or canonicalization. One au
 
 - Begin with Container Apps log streaming and built-in CPU, memory, restart, replica, and network metrics. Set log retention/spend limits; telemetry can cost money even when compute is cheap.
 - Instrument ASP.NET requests and outgoing database calls with OpenTelemetry. Export to Application Insights/Azure Monitor or another compatible backend. Do not duplicate all logs into multiple paid systems without a reason.
-- Create a dashboard for request rate, status-code/error rate, p50/p95/p99 latency, CPU, memory, replica count, database connections/slow queries, and import outcomes.
+- Create a dashboard for request rate, status-code/error rate, p50/p95/p99 latency, CPU, memory, replica count, database connections/slow queries, scheduled-job executions/duration/failures, and import outcomes.
 - Add a few explicitly defined business events (for example product searches or comparisons) only after deciding what questions you want answered. Avoid personal data in event dimensions.
 - Add basic alerts for sustained errors, failed readiness, restarts, and resource saturation. Trigger one safe test alert to verify delivery.
 
@@ -354,7 +365,7 @@ Starting or restarting the API performs no ingestion or canonicalization. One au
 - Document how to rotate secrets, restore the database, roll back an image, inspect logs, and respond to an unhealthy deployment.
 - Rebuild images regularly for .NET/browser/security updates; rerun CI and smoke tests after dependency upgrades.
 - Review monthly spend, usage quotas, storage growth, backup success, and alert noise.
-- If ingestion becomes scheduled or resource-heavy, split it into a separate container job/worker. Add a queue only when retries, backpressure, or parallel workers require it. Give the worker its own CPU/memory limits and failure alerts.
+- Operate ingestion as a separate scheduled container job with its own CPU/memory limits, timeout, retry policy, logs, and failure alerts. Add a queue only when retries, backpressure, or parallel workers require it.
 - Consider moving from free-tier services to paid plans when reliability, backups, traffic, or retention requirements exceed their limits.
 
 **Checkpoint:** Someone following the runbook can diagnose an outage and restore service without relying on undocumented knowledge.
@@ -365,7 +376,7 @@ For each step, save: the commit or pull request, one screenshot or command outpu
 
 ## Primary references to check while implementing
 
-- [Azure Container Apps overview](https://learn.microsoft.com/en-us/azure/container-apps/overview) and [observability](https://learn.microsoft.com/en-us/azure/container-apps/observability)
+- [Azure Container Apps overview](https://learn.microsoft.com/en-us/azure/container-apps/overview), [jobs](https://learn.microsoft.com/en-us/azure/container-apps/jobs), and [observability](https://learn.microsoft.com/en-us/azure/container-apps/observability)
 - [Azure Container Apps pricing](https://azure.microsoft.com/en-us/pricing/details/container-apps/) and [Neon pricing](https://neon.com/pricing) (recheck before provisioning)
 - [GitHub Actions documentation](https://docs.github.com/en/actions) and [GitHub OIDC with Azure](https://docs.github.com/en/actions/how-tos/security-for-github-actions/security-hardening-your-deployments/configuring-openid-connect-in-azure)
 - [Playwright for .NET Docker guidance](https://playwright.dev/dotnet/docs/docker)
