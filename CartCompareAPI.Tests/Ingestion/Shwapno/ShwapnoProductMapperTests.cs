@@ -25,6 +25,7 @@ public sealed class ShwapnoProductMapperTests
         Assert.Same(category, result.SourceCategory);
         Assert.Equal(source.Sku, result.ExternalProductId);
         Assert.Equal(source.Name, result.StoreProductName);
+        Assert.Equal("1kg", result.SourceQuantityText);
         Assert.Equal(source.Price.PriceValue, result.Price);
         Assert.Equal(source.Price.oldPriceValue, result.OriginalPrice);
         Assert.True(result.InStock);
@@ -58,6 +59,16 @@ public sealed class ShwapnoProductMapperTests
             {
                 FullSizeImageUrl = "https://images.example/fresh-milk.jpg"
             }
-        }
+        },
+        UomOptions =
+        [
+            new UomOption { Name = "500gm", UnitValue = 500m },
+            new UomOption
+            {
+                Name = "1kg",
+                UnitValue = 1000m,
+                IsPreSelected = true
+            }
+        ]
     };
 }

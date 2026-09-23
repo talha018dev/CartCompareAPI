@@ -24,7 +24,8 @@ public sealed class StoreProductCanonicalizer(
         ProductNormalizationResult normalizationResult =
             normalizationService.Normalize(
                 storeProduct.StoreProductName,
-                brandDefinitions);
+                brandDefinitions,
+                storeProduct.SourceQuantityText);
 
         if (!normalizationResult.IsSuccess)
         {

@@ -84,4 +84,27 @@ public sealed class ProductQuantityParserTests
         Assert.Null(result);
     }
 
+    [Fact]
+    public void Parse_WhenNameHasNoQuantity_ShouldUseFallbackQuantityText()
+    {
+        ParsedQuantity? result = parser.Parse(
+            "Basmati Rice Loose Premium Kg",
+            "1kg");
+
+        Assert.NotNull(result);
+        Assert.Equal(1000m, result.Value);
+        Assert.Equal("g", result.Unit);
+        Assert.Equal("1kg", result.MatchedText);
+    }
+
+    [Fact]
+    public void Parse_WhenNameHasQuantity_ShouldPreferNameOverFallback()
+    {
+        ParsedQuantity? result = parser.Parse("Rice 500g", "1kg");
+
+        Assert.NotNull(result);
+        Assert.Equal(500m, result.Value);
+        Assert.Equal("g", result.Unit);
+    }
+
 }

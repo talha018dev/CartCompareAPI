@@ -51,6 +51,34 @@ public sealed class StoreProductCanonicalizerTests
     }
 
     [Fact]
+    public async Task CanonicalizeAsync_ShouldPassSourceQuantityTextToNormalization()
+    {
+        await using AppDbContext db = CreateDbContext();
+        var normalizationService = new StubNormalizationService(
+            ProductNormalizationResult.Unresolved(
+                ProductNormalizationFailure.QuantityNotResolved));
+        var canonicalizer = new StoreProductCanonicalizer(
+            db,
+            normalizationService,
+            new CanonicalKeyBuilder(),
+            TimeProvider.System);
+        var storeProduct = new StoreProduct
+        {
+            Id = Guid.NewGuid(),
+            StoreProductName = "Basmati Rice Loose Premium Kg",
+            SourceQuantityText = "1kg"
+        };
+
+        await canonicalizer.CanonicalizeAsync(
+            storeProduct,
+            CreateCategory(),
+            [],
+            CancellationToken.None);
+
+        Assert.Equal("1kg", normalizationService.ReceivedQuantityHint);
+    }
+
+    [Fact]
     public async Task CanonicalizeAsync_WhenCanonicalKeyExists_ShouldLinkAndReturnMatched()
     {
         await using AppDbContext db = CreateDbContext();
@@ -308,10 +336,14 @@ public sealed class StoreProductCanonicalizerTests
     {
         public ProductNormalizationResult Normalize(
             string productName,
-            IReadOnlyCollection<BrandDefinition> brands)
+            IReadOnlyCollection<BrandDefinition> brands,
+            string? quantityHint = null)
         {
+            ReceivedQuantityHint = quantityHint;
             return result;
         }
+
+        public string? ReceivedQuantityHint { get; private set; }
     }
 
     private sealed class FixedTimeProvider(DateTimeOffset utcNow) : TimeProvider

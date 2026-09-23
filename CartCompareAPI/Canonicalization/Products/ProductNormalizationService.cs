@@ -16,7 +16,8 @@ public sealed class ProductNormalizationService(
 {
     public ProductNormalizationResult Normalize(
         string productName,
-        IReadOnlyCollection<BrandDefinition> brands)
+        IReadOnlyCollection<BrandDefinition> brands,
+        string? quantityHint = null)
     {
         if (string.IsNullOrWhiteSpace(productName))
         {
@@ -25,7 +26,9 @@ public sealed class ProductNormalizationService(
         }
 
         BrandResolution? brand = brandResolver.Resolve(productName, brands);
-        ParsedQuantity? quantity = quantityParser.Parse(productName);
+        ParsedQuantity? quantity = quantityParser.Parse(
+            productName,
+            quantityHint);
         if (quantity is null)
         {
             return ProductNormalizationResult.Unresolved(

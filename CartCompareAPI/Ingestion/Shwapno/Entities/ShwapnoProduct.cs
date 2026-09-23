@@ -20,6 +20,7 @@ public class ShwapnoProduct
     public bool AllowAddToCart { get; set; }
     public bool CantAddOtherItems { get; set; }
     public int UomType { get; set; }
+    public List<UomOption> UomOptions { get; set; } = [];
     public int DisplayOrder { get; set; }
     public string Stock { get; set; } = string.Empty;
     public bool IsQuickView { get; set; }

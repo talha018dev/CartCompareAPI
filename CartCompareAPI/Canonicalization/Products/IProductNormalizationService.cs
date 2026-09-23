@@ -6,5 +6,6 @@ public interface IProductNormalizationService
 {
     ProductNormalizationResult Normalize(
         string productName,
-        IReadOnlyCollection<BrandDefinition> brands);
+        IReadOnlyCollection<BrandDefinition> brands,
+        string? quantityHint = null);
 }

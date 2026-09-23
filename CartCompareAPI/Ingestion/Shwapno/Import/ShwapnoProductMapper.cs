@@ -17,6 +17,7 @@ public sealed class ShwapnoProductMapper
             storeProduct.InStock != newInStock;
 
         storeProduct.StoreProductName = source.Name;
+        storeProduct.SourceQuantityText = GetQuantityText(source);
         storeProduct.Price = source.Price.PriceValue;
         storeProduct.OriginalPrice = source.Price.oldPriceValue;
         storeProduct.InStock = IsInStock(source);
@@ -52,7 +53,8 @@ public sealed class ShwapnoProductMapper
             LastUpdated = now,
             CreatedAt = now,
             SourceCategoryId = category.Id,
-            SourceCategory = category
+            SourceCategory = category,
+            SourceQuantityText = GetQuantityText(source)
         };
 
         storeProduct.PriceHistory.Add(new PriceHistory
@@ -86,6 +88,12 @@ public sealed class ShwapnoProductMapper
         return source.Picture?
             .LargeDeviceUrl?
             .FullSizeImageUrl;
+    }
+    private static string? GetQuantityText(ShwapnoProduct source)
+    {
+        return source.UomOptions
+            .FirstOrDefault(option => option.IsPreSelected)
+            ?.Name;
     }
 
 }

@@ -72,4 +72,19 @@ public sealed class ProductNormalizationServiceTests
             ProductNormalizationFailure.QuantityNotResolved,
             result.Failure);
     }
+
+    [Fact]
+    public void Normalize_WithQuantityHint_ShouldNormalizeLooseRiceProduct()
+    {
+        ProductNormalizationResult result = service.Normalize(
+            "Basmati Rice Loose Premium Kg",
+            [],
+            "1kg");
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Product);
+        Assert.Equal("basmati rice loose premium kg", result.Product.NormalizedName);
+        Assert.Equal(1000m, result.Product.Quantity.Value);
+        Assert.Equal("g", result.Product.Quantity.Unit);
+    }
 }

@@ -1,26 +1,35 @@
-using System;
-using System.Globalization;
+﻿using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace CartCompareAPI.Canonicalization.Quantity;
 
-public class ProductQuantityParser : IQuantityParser
+public sealed class ProductQuantityParser : IQuantityParser
 {
-
     private static readonly Regex QuantityPattern = new(
         @"(?<![\p{L}\p{N}])(?<value>\d+(?:\.\d+)?)\s*(?<unit>kg|gm|g|ml|litres?|liters?|ltr|l|portions?|pcs|pc|pieces?|piece)(?!\p{L})",
         RegexOptions.IgnoreCase | RegexOptions.Compiled);
-    public ParsedQuantity? Parse(string productName)
+
+    public ParsedQuantity? Parse(
+        string productName,
+        string? fallbackQuantityText = null)
     {
-        if (string.IsNullOrWhiteSpace(productName)
-            || productName.Contains('±'))
+        ParsedQuantity? fromName = ParseSingleText(productName);
+
+        return fromName ?? ParseSingleText(fallbackQuantityText);
+    }
+
+    private static ParsedQuantity? ParseSingleText(string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text) ||
+            text.Contains("±", StringComparison.Ordinal) ||
+            text.Contains("Â±", StringComparison.Ordinal))
         {
             return null;
         }
 
-        MatchCollection matches = QuantityPattern.Matches(productName);
+        MatchCollection matches = QuantityPattern.Matches(text);
 
-        if (matches.Count == 0)
+        if (matches.Count != 1)
         {
             return null;
         }
@@ -29,22 +38,12 @@ public class ProductQuantityParser : IQuantityParser
         string matchedValue = match.Groups["value"].Value;
         string matchedUnit = match.Groups["unit"].Value.ToLowerInvariant();
 
-        if (matches.Count != 1)
-        {
-            return null;
-        }
-
         if (!decimal.TryParse(
                 matchedValue,
                 NumberStyles.AllowDecimalPoint,
                 CultureInfo.InvariantCulture,
-                out decimal value
-        ))
-        {
-            return null;
-        }
-
-        if (value <= 0)
+                out decimal value) ||
+            value <= 0)
         {
             return null;
         }
@@ -53,11 +52,11 @@ public class ProductQuantityParser : IQuantityParser
         {
             "kg" => new ParsedQuantity(value * 1000, "g", match.Value),
             "gm" or "g" => new ParsedQuantity(value, "g", match.Value),
-            "l" or "ltr" or "liter" or "liters" or "litre" or "litres"
-                => new ParsedQuantity(value * 1000, "ml", match.Value),
+            "l" or "ltr" or "liter" or "liters" or "litre" or "litres" =>
+                new ParsedQuantity(value * 1000, "ml", match.Value),
             "ml" => new ParsedQuantity(value, "ml", match.Value),
-            "pc" or "pcs" or "piece" or "pieces" or "portion" or "portions"
-                => new ParsedQuantity(value, "count", match.Value),
+            "pc" or "pcs" or "piece" or "pieces" or "portion" or "portions" =>
+                new ParsedQuantity(value, "count", match.Value),
             _ => null
         };
     }

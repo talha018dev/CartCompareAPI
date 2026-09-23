@@ -14,6 +14,7 @@ public class StoreProduct
 
     public string ExternalProductId { get; set; } = string.Empty;
     public string StoreProductName { get; set; } = string.Empty;
+    public string? SourceQuantityText { get; set; }
 
     public decimal Price { get; set; }
     public decimal? OriginalPrice { get; set; }

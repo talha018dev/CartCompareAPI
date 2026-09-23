@@ -32,6 +32,7 @@ public sealed class AppDbContextStoreProductTests
                 ProductId = null,
                 ExternalProductId = "SKU-1",
                 StoreProductName = "Fresh Milk 500 ml",
+                SourceQuantityText = "500ml",
                 Price = 95m,
                 InStock = true,
                 CreatedAt = DateTime.UtcNow,
@@ -48,6 +49,7 @@ public sealed class AppDbContextStoreProductTests
 
             Assert.Null(persisted.ProductId);
             Assert.Null(persisted.Product);
+            Assert.Equal("500ml", persisted.SourceQuantityText);
             Assert.Empty(db.Products);
         }
     }
