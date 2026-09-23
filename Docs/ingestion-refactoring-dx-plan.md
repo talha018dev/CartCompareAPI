@@ -47,6 +47,97 @@ the flow.
 - Tests mostly use a flatter structure than production, so production and test
   files are harder to compare side by side.
 
+## Step 1 baseline (2026-09-24)
+
+**Status:** Completed.
+
+### Verification
+
+- Full solution test run: **160 passed, 0 failed, 0 skipped**.
+- Command:
+
+```powershell
+dotnet test CartCompareAPI.slnx --nologo --no-restore
+```
+
+- Existing build warning: the test project resolves conflicting
+  `Microsoft.EntityFrameworkCore.Relational` versions 10.0.4 and 10.0.11.
+- Existing restore warning: NuGet vulnerability metadata could not be reached
+  in the restricted environment.
+- Repository migration tip:
+  `20260923220047_AddNamesToCanonicalizationIssues`.
+
+### Current workflow map
+
+Follow the live request in this order:
+
+1. Trigger:
+   [`ShwapnoController`](../CartCompareAPI/Ingestion/Shwapno/Controllers/ShwapnoController.cs)
+2. Complete workflow:
+   [`ShwapnoIngestionOrchestrator`](../CartCompareAPI/Ingestion/Shwapno/ShwapnoIngestionOrchestrator.cs)
+3. Playwright product source:
+   [`ShwapnoBrowserClient`](../CartCompareAPI/Ingestion/Shwapno/Browser/ShwapnoBrowserClient.cs)
+4. Import and commit:
+   [`ShwapnoDairyImporter`](../CartCompareAPI/Ingestion/Shwapno/Import/ShwapnoDairyImporter.cs)
+5. Retailer field mapping:
+   [`ShwapnoProductMapper`](../CartCompareAPI/Ingestion/Shwapno/Import/ShwapnoProductMapper.cs)
+6. Pending-listing batch:
+   [`StoreProductCanonicalizationService`](../CartCompareAPI/Canonicalization/StoreProducts/StoreProductCanonicalizationService.cs)
+7. One-listing match or creation:
+   [`StoreProductCanonicalizer`](../CartCompareAPI/Canonicalization/StoreProducts/StoreProductCanonicalizer.cs)
+8. Persisted unresolved item:
+   [`StoreProductCanonicalizationIssue`](../CartCompareAPI/Domain/Entities/StoreProductCanonicalizationIssue.cs)
+9. Returned phase summaries:
+   [`ShwapnoIngestionResult`](../CartCompareAPI/Ingestion/Shwapno/ShwapnoIngestionResult.cs)
+
+The import transaction commits before canonicalization starts. A
+canonicalization exception therefore returns partial success and does not undo
+the imported `StoreProduct` rows.
+
+### Recorded behavior
+
+A manually observed `loose-rice` run completed the scrape and import phases with
+this result:
+
+```json
+{
+  "status": "Completed",
+  "scrape": { "productsCollected": 8 },
+  "import": { "received": 8, "created": 8, "updated": 0 },
+  "canonicalization": {
+    "succeeded": true,
+    "summary": {
+      "matched": 0,
+      "created": 0,
+      "unresolved": 8,
+      "failed": 0
+    },
+    "error": null
+  }
+}
+```
+
+This distinguishes a completed ingestion run from complete canonicalization:
+the workflow succeeded, but eight listings required later resolution.
+
+A current tested unresolved example is a product title without a reliable
+quantity, such as `Milk Powder large pack`. Normalization returns
+`QuantityNotResolved`, the listing remains unlinked, and the batch records or
+updates its row in `StoreProductCanonicalizationIssues` with its store, source
+product, reason, timestamps, and attempt count.
+
+### Baseline invariants to preserve
+
+- The endpoint remains `POST /api/v1/ingestion/shwapno?category={slug}`.
+- Scraping returns products in memory; the live flow does not require JSON.
+- Import commits before canonicalization.
+- Canonicalization failures are reported separately from scrape/import
+  failures.
+- Pending listings remain retryable.
+- Unresolved and failed listings are recorded for later inspection.
+- The ingestion API key and in-process concurrency filters run before the
+  controller action.
+
 ## Design rules for the refactor
 
 1. Organize by feature and workflow phase. A folder should answer where am I in
@@ -145,6 +236,9 @@ names. Those changes add migration risk without improving navigation.
 ## Refactoring steps
 
 ### 1. Record the baseline and workflow map
+
+**Status:** Completed on 2026-09-24. See
+[Step 1 baseline](#step-1-baseline-2026-09-24).
 
 - Run the full test suite and record the test count.
 - Record one successful ingestion response and one unresolved-product example.
