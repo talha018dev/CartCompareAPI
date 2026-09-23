@@ -14,6 +14,7 @@ public sealed class StoreProductCanonicalizationServiceTests
         await using var db = CreateContext();
         var storeId = Guid.NewGuid();
         var otherStoreId = Guid.NewGuid();
+        var now = new DateTimeOffset(2026, 9, 24, 2, 0, 0, TimeSpan.Zero);
         var category = new Category { Id = Guid.NewGuid(), Name = "Dairy", Slug = "dairy" };
         var otherCategory = new Category
         {
@@ -22,21 +23,49 @@ public sealed class StoreProductCanonicalizationServiceTests
         var target = Listing(storeId, category.Id, "SKU-A");
 
         db.Categories.AddRange(category, otherCategory);
+        db.Stores.AddRange(Store(storeId, "Shwapno"), Store(otherStoreId, "Other Store"));
         db.StoreProducts.AddRange(
             target,
             Listing(storeId, otherCategory.Id, "SKU-B"),
             Listing(otherStoreId, category.Id, "SKU-C"),
             Listing(storeId, category.Id, "SKU-D", Guid.NewGuid()));
+        db.StoreProductCanonicalizationIssues.Add(new StoreProductCanonicalizationIssue
+        {
+            Id = Guid.NewGuid(),
+            StoreProductId = target.Id,
+            StoreId = storeId,
+            StoreProductName = string.Empty,
+            StoreName = string.Empty,
+            Outcome = StoreProductCanonicalizationOutcome.Unresolved,
+            FailureReason = StoreProductCanonicalizationFailure.QuantityNotResolved,
+            AttemptCount = 1,
+            FirstOccurredAt = now.UtcDateTime.AddDays(-1),
+            LastOccurredAt = now.UtcDateTime.AddDays(-1)
+        });
         await db.SaveChangesAsync();
 
         var canonicalizer = new RecordingCanonicalizer();
         var service = new StoreProductCanonicalizationService(
-            db, canonicalizer, new EmptyBrandDefinitionProvider());
+            db,
+            canonicalizer,
+            new EmptyBrandDefinitionProvider(),
+            new FixedTimeProvider(now));
 
         var summary = await service.CanonicalizePendingAsync(storeId, category.Id);
 
         Assert.Equal(new[] { (target.Id, category.Id) }, canonicalizer.Calls);
         Assert.Equal(new StoreProductCanonicalizationSummary(0, 0, 1, 0), summary);
+        StoreProductCanonicalizationIssue issue =
+            await db.StoreProductCanonicalizationIssues.SingleAsync();
+        Assert.Equal(target.Id, issue.StoreProductId);
+        Assert.Equal(storeId, issue.StoreId);
+        Assert.Equal("Product SKU-A", issue.StoreProductName);
+        Assert.Equal("Shwapno", issue.StoreName);
+        Assert.Equal(StoreProductCanonicalizationOutcome.Unresolved, issue.Outcome);
+        Assert.Equal(StoreProductCanonicalizationFailure.MissingName, issue.FailureReason);
+        Assert.Equal(2, issue.AttemptCount);
+        Assert.Equal(now.UtcDateTime.AddDays(-1), issue.FirstOccurredAt);
+        Assert.Equal(now.UtcDateTime, issue.LastOccurredAt);
     }
 
     [Fact]
@@ -49,12 +78,13 @@ public sealed class StoreProductCanonicalizationServiceTests
         var earlier = Listing(storeId, category.Id, "SKU-A");
 
         db.Categories.Add(category);
+        db.Stores.Add(Store(storeId, "Shwapno"));
         db.StoreProducts.AddRange(later, earlier);
         await db.SaveChangesAsync();
 
         var canonicalizer = new RecordingCanonicalizer();
         var service = new StoreProductCanonicalizationService(
-            db, canonicalizer, new EmptyBrandDefinitionProvider());
+            db, canonicalizer, new EmptyBrandDefinitionProvider(), TimeProvider.System);
 
         var summary = await service.CanonicalizePendingAsync(storeId, category.Id);
 
@@ -73,11 +103,12 @@ public sealed class StoreProductCanonicalizationServiceTests
         var first = Listing(storeId, category.Id, "SKU-A");
         var second = Listing(storeId, category.Id, "SKU-B");
         db.Categories.Add(category);
+        db.Stores.Add(Store(storeId, "Shwapno"));
         db.StoreProducts.AddRange(first, second);
         await db.SaveChangesAsync();
 
         var service = new StoreProductCanonicalizationService(
-            db, new DatabaseLookingCanonicalizer(db), new EmptyBrandDefinitionProvider());
+            db, new DatabaseLookingCanonicalizer(db), new EmptyBrandDefinitionProvider(), TimeProvider.System);
 
         var summary = await service.CanonicalizePendingAsync(storeId, category.Id);
 
@@ -95,16 +126,23 @@ public sealed class StoreProductCanonicalizationServiceTests
         var category = new Category { Id = Guid.NewGuid(), Name = "Dairy", Slug = "dairy" };
         var listing = Listing(storeId, category.Id, "SKU-A");
         db.Categories.Add(category);
+        db.Stores.Add(Store(storeId, "Shwapno"));
         db.StoreProducts.Add(listing);
         await db.SaveChangesAsync();
 
         var service = new StoreProductCanonicalizationService(
-            db, new FailedCanonicalizer(), new EmptyBrandDefinitionProvider());
+            db, new FailedCanonicalizer(), new EmptyBrandDefinitionProvider(), TimeProvider.System);
 
         var summary = await service.CanonicalizePendingAsync(storeId, category.Id);
 
         Assert.Equal(new StoreProductCanonicalizationSummary(0, 0, 0, 1), summary);
         Assert.Null((await db.StoreProducts.SingleAsync()).ProductId);
+        StoreProductCanonicalizationIssue issue =
+            await db.StoreProductCanonicalizationIssues.SingleAsync();
+        Assert.Equal(StoreProductCanonicalizationOutcome.Failed, issue.Outcome);
+        Assert.Equal(
+            StoreProductCanonicalizationFailure.PersistenceFailed,
+            issue.FailureReason);
     }
 
     [Fact]
@@ -114,11 +152,12 @@ public sealed class StoreProductCanonicalizationServiceTests
         var storeId = Guid.NewGuid();
         var category = new Category { Id = Guid.NewGuid(), Name = "Dairy", Slug = "dairy" };
         db.Categories.Add(category);
+        db.Stores.Add(Store(storeId, "Shwapno"));
         db.StoreProducts.Add(Listing(storeId, category.Id, "SKU-A"));
         await db.SaveChangesAsync();
 
         var service = new StoreProductCanonicalizationService(
-            db, new ThrowingCanonicalizer(), new EmptyBrandDefinitionProvider());
+            db, new ThrowingCanonicalizer(), new EmptyBrandDefinitionProvider(), TimeProvider.System);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
             service.CanonicalizePendingAsync(storeId, category.Id));
@@ -131,7 +170,15 @@ public sealed class StoreProductCanonicalizationServiceTests
         StoreId = storeId,
         SourceCategoryId = categoryId,
         ProductId = productId,
-        ExternalProductId = sku
+        ExternalProductId = sku,
+        StoreProductName = $"Product {sku}"
+    };
+
+    private static Store Store(Guid id, string name) => new()
+    {
+        Id = id,
+        Name = name,
+        Slug = name.ToLowerInvariant().Replace(' ', '-')
     };
 
     private static AppDbContext CreateContext()
@@ -221,5 +268,10 @@ public sealed class StoreProductCanonicalizationServiceTests
         public Task<IReadOnlyCollection<BrandDefinition>> GetAllAsync(
             CancellationToken cancellationToken = default) =>
             Task.FromResult<IReadOnlyCollection<BrandDefinition>>([]);
+    }
+
+    private sealed class FixedTimeProvider(DateTimeOffset utcNow) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => utcNow;
     }
 }

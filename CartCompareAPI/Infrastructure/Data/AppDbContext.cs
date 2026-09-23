@@ -12,6 +12,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Product> Products => Set<Product>();
     public DbSet<StoreProduct> StoreProducts => Set<StoreProduct>();
     public DbSet<PriceHistory> PriceHistory => Set<PriceHistory>();
+    public DbSet<StoreProductCanonicalizationIssue> StoreProductCanonicalizationIssues =>
+        Set<StoreProductCanonicalizationIssue>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -39,6 +41,21 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
         modelBuilder.Entity<PriceHistory>()
             .HasIndex(x => new { x.StoreProductId, x.RecordedAt });
+
+        modelBuilder.Entity<StoreProductCanonicalizationIssue>()
+            .HasIndex(x => x.StoreProductId)
+            .IsUnique();
+
+        modelBuilder.Entity<StoreProductCanonicalizationIssue>()
+            .HasIndex(x => new { x.StoreId, x.LastOccurredAt });
+
+        modelBuilder.Entity<StoreProductCanonicalizationIssue>()
+            .Property(x => x.Outcome)
+            .HasConversion<string>();
+
+        modelBuilder.Entity<StoreProductCanonicalizationIssue>()
+            .Property(x => x.FailureReason)
+            .HasConversion<string>();
     }
 
 
